@@ -1,0 +1,4 @@
+
+# -- set of rich validators for almost all kinds
+# DOCS: https://validators.readthedocs.io/en/latest/
+validators==0.12.2
