@@ -1,5 +1,5 @@
 
-from . import validators as val
+from . import validator as val
 
 
 class BaseField:
@@ -66,7 +66,7 @@ class URLField(BaseField):
         if serialized == val.NULL:
             return None
 
-        URLValidator()(value)
+        val.url(value)
 
         return value
 

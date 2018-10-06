@@ -15,8 +15,12 @@ setup(
         'their validity etc.'),
     version='0.0.1',
     author='CoSphere Tech Team',
+    url='https://bitbucket.org/goodai/lily-env',
     packages=find_packages(),
+    entry_points='''
+        [console_scripts]
+        lily_env=lily_env.cli:cli
+    ''',
     install_requires=open(requirements_path).readlines(),
     package_data={'': ['requirements.txt']},
-    include_package_data=True,
-)
+    include_package_data=True)

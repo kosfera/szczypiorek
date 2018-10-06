@@ -58,4 +58,4 @@ docker-compose.yml
 # django
 collectedstatic
 
-lily/.lily-cache/
+dump.json

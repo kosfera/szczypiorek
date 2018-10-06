@@ -1,88 +1,8 @@
 
+import json
 import os
 
-from . import validators
-
-
-class BaseField:
-
-    def __init__(
-            self,
-            required=True,
-            default=None,
-            allow_null=False,
-            description=None):
-
-        self.required = required
-        self.default = default
-        self.allow_null = allow_null
-        self.description = description
-
-    def serialize(self, value):
-
-        if not self.allow_null:
-            not_null_validator(value)
-
-        elif value is None and self.allow_null:
-            return NULL
-
-
-class CharField(BaseField):
-
-    def __init__(self, min_length=None, max_length=None, **kwargs):
-        self.min_length = min_length
-        self.max_length = max_length
-        super(CharField, self).__init__(**kwargs)
-
-    def serialize(self, value):
-
-        # -- base validation
-        serialized = super(CharField, self).serialize(value)
-        if serialized == NULL:
-            return None
-
-        return value
-
-
-class BooleanField(BaseField):
-
-    def serialize(self, value):
-
-        # -- base validation
-        serialized = super(BooleanField, self).serialize(value)
-        if serialized == NULL:
-            return None
-
-        if isinstance(value, bool):
-            return value
-
-        return value.upper() == 'TRUE'
-
-
-class URLField(BaseField):
-
-    def serialize(self, value):
-
-        # -- base validation
-        serialized = super(URLField, self).serialize(value)
-        if serialized == NULL:
-            return None
-
-        URLValidator()(value)
-
-        return value
-
-
-class IntegerField(BaseField):
-
-    def serialize(self, value):
-
-        # -- base validation
-        serialized = super(IntegerField, self).serialize(value)
-        if serialized == NULL:
-            return None
-
-        return int(value)
+from .fields import BaseField
 
 
 class Env:
@@ -92,14 +12,37 @@ class Env:
 
     """
 
+    # FIXME: test it!!!
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+        with open('./env_dump.json', 'w') as f:
+            f.write(json.dumps(kwargs))
+
+    # FIXME: test it!!!
+    @classmethod
+    def from_dump(cls):
+        with open('./env_dump.json', 'r') as f:
+            return json.loads(f.read())
+
+
+class NotUniqueError(Exception):
+    pass
+
 
 class EnvParser:
 
+    instance = None
+
     def __init__(self):
+        # FIXME: test it!!!
+        if self.instance:
+            raise NotUniqueError(
+                'One can have only one instance of `EnvParser`')
+
+        else:
+            self.instance = self
 
         env_variables = {}
         for field_name, field in self.fields.items():
