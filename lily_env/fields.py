@@ -16,13 +16,35 @@ class BaseField:
         self.allow_null = allow_null
         self.description = description
 
-    def serialize(self, value):
+    def to_python(self, value):
 
         if not self.allow_null:
             val.not_null(value)
 
         elif value is None and self.allow_null:
             return val.NULL
+
+
+class BooleanField(BaseField):
+
+    def to_python(self, value):
+
+        # -- base validation
+        result = super(BooleanField, self).to_python(value)
+        if result == val.NULL:
+            return None
+
+        if isinstance(value, bool):
+            return value
+
+        if value.upper() == 'TRUE':
+            return True
+
+        elif value.upper() == 'FALSE':
+            return False
+
+        else:
+            raise val.ValidatorError(f'Cannot cast {value} to boolean')
 
 
 class CharField(BaseField):
@@ -32,52 +54,62 @@ class CharField(BaseField):
         self.max_length = max_length
         super(CharField, self).__init__(**kwargs)
 
-    def serialize(self, value):
+    def to_python(self, value):
 
         # -- base validation
-        serialized = super(CharField, self).serialize(value)
-        if serialized == val.NULL:
+        result = super(CharField, self).to_python(value)
+        if result == val.NULL:
             return None
+
+        val.length(
+            value,
+            min_length=self.min_length,
+            max_length=self.max_length)
 
         return value
 
 
-class BooleanField(BaseField):
+class FloatField(BaseField):
 
-    def serialize(self, value):
+    def to_python(self, value):
 
         # -- base validation
-        serialized = super(BooleanField, self).serialize(value)
-        if serialized == val.NULL:
+        result = super(FloatField, self).to_python(value)
+        if result == val.NULL:
             return None
 
-        if isinstance(value, bool):
-            return value
+        try:
+            return float(value)
 
-        return value.upper() == 'TRUE'
+        except ValueError:
+            raise val.ValidatorError(f'Cannot cast {value} to float')
+
+
+class IntegerField(BaseField):
+
+    def to_python(self, value):
+
+        # -- base validation
+        result = super(IntegerField, self).to_python(value)
+        if result == val.NULL:
+            return None
+
+        try:
+            return int(float(value))
+
+        except ValueError:
+            raise val.ValidatorError(f'Cannot cast {value} to integer')
 
 
 class URLField(BaseField):
 
-    def serialize(self, value):
+    def to_python(self, value):
 
         # -- base validation
-        serialized = super(URLField, self).serialize(value)
-        if serialized == val.NULL:
+        result = super(URLField, self).to_python(value)
+        if result == val.NULL:
             return None
 
         val.url(value)
 
         return value
-
-
-class IntegerField(BaseField):
-
-    def serialize(self, value):
-
-        # -- base validation
-        serialized = super(IntegerField, self).serialize(value)
-        if serialized == val.NULL:
-            return None
-
-        return int(value)

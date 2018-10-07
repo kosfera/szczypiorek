@@ -17,8 +17,14 @@ def dump():
 
     """
 
-    print('\n'.join([
-        f'{k.upper()}: {v}' for k, v in Env.from_dump().items()]))
+    try:
+        click.echo('\n'.join([
+            f'{k.upper()}: {v}' for k, v in Env.from_dump().items()]))
+
+    except FileNotFoundError:
+        raise click.ClickException(
+            'Dump file does not exist, run `parse` on your '
+            '`EnvParser` instance in order to render it')
 
 
 cli.add_command(dump)

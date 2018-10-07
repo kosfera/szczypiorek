@@ -9,5 +9,11 @@ Foundations:
 ## Defining the Environment Parser
 ...
 
+
 ## CLI
 ...
+
+
+## TODOs
+
+[ ] integrate with AWS secrets

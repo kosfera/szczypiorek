@@ -12,37 +12,26 @@ class Env:
 
     """
 
-    # FIXME: test it!!!
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-        with open('./env_dump.json', 'w') as f:
+        with open(Env.get_dump_filepath(), 'w') as f:
             f.write(json.dumps(kwargs))
 
-    # FIXME: test it!!!
     @classmethod
     def from_dump(cls):
-        with open('./env_dump.json', 'r') as f:
+        with open(Env.get_dump_filepath(), 'r') as f:
             return json.loads(f.read())
 
-
-class NotUniqueError(Exception):
-    pass
+    @staticmethod
+    def get_dump_filepath():
+        return './env_dump.json'
 
 
 class EnvParser:
 
-    instance = None
-
     def __init__(self):
-        # FIXME: test it!!!
-        if self.instance:
-            raise NotUniqueError(
-                'One can have only one instance of `EnvParser`')
-
-        else:
-            self.instance = self
 
         env_variables = {}
         for field_name, field in self.fields.items():
@@ -53,7 +42,7 @@ class EnvParser:
                 raw_value = os.environ.get(
                     field_name.upper(), field.default)
 
-            env_variables[field_name] = field.serialize(raw_value)
+            env_variables[field_name] = field.to_python(raw_value)
 
         self.env_variables = env_variables
 
