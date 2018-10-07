@@ -26,7 +26,8 @@ class Env:
 
     @staticmethod
     def get_dump_filepath():
-        return './env_dump.json'
+        base_dir = os.path.dirname(__file__)
+        return f'{base_dir}/lily_env_dump.json'
 
 
 class EnvParser:

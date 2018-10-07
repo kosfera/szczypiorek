@@ -41,11 +41,11 @@ class CliTestCase(TestCase):
         os.environ['AWS_URL'] = 'http://hello.word.org'
         os.environ['NUMBER_OF_WORKERS'] = '113'
 
-        self.tmpdir.join('env_dump.json').write('hey')
+        self.tmpdir.join('lily_env_dump.json').write('hey')
         self.mocker.patch.object(
             Env,
             'get_dump_filepath'
-        ).return_value = str(self.tmpdir.join('env_dump.json'))
+        ).return_value = str(self.tmpdir.join('lily_env_dump.json'))
 
         MyEnvParser().parse()
 
@@ -70,7 +70,7 @@ class CliTestCase(TestCase):
         self.mocker.patch.object(
             Env,
             'get_dump_filepath'
-        ).return_value = str(self.tmpdir.join('env_dump.json'))
+        ).return_value = str(self.tmpdir.join('lily_env_dump.json'))
 
         MyEnvParser()
 

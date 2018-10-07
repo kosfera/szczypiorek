@@ -20,17 +20,17 @@ class EnvTestCase(TestCase):
     #
     def test__init__(self):
 
-        self.tmpdir.join('env_dump.json').write('hey')
+        self.tmpdir.join('lily_env_dump.json').write('hey')
         self.mocker.patch.object(
             Env,
             'get_dump_filepath'
-        ).return_value = str(self.tmpdir.join('env_dump.json'))
+        ).return_value = str(self.tmpdir.join('lily_env_dump.json'))
 
         e = Env(is_prod=True, secret_key='hello')
 
         assert e.is_prod is True
         assert e.secret_key == 'hello'
-        assert self.tmpdir.join('env_dump.json').read() == (
+        assert self.tmpdir.join('lily_env_dump.json').read() == (
             '{"is_prod": true, "secret_key": "hello"}')
 
     #
@@ -38,12 +38,12 @@ class EnvTestCase(TestCase):
     #
     def test_from_dump(self):
 
-        self.tmpdir.join('env_dump.json').write(
+        self.tmpdir.join('lily_env_dump.json').write(
             '{"is_prod": false, "secret_key": "hello"}')
         self.mocker.patch.object(
             Env,
             'get_dump_filepath'
-        ).return_value = str(self.tmpdir.join('env_dump.json'))
+        ).return_value = str(self.tmpdir.join('lily_env_dump.json'))
 
         assert Env.from_dump() == {"is_prod": False, "secret_key": "hello"}
 
