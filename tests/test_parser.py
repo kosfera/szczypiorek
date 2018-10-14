@@ -145,7 +145,8 @@ class EnvParserTestCase(TestCase):
             MyEnvParser().parse()
 
         except env.ValidatorError as e:
-            assert e.args[0] == 'Text "not.url" is not valid URL'
+            assert e.args[0] == (
+                'env.aws_url: Text "not.url" is not valid URL')
 
         else:
             raise AssertionError('should raise exception')

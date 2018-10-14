@@ -43,7 +43,7 @@ class EnvParser:
                 raw_value = os.environ.get(
                     field_name.upper(), field.default)
 
-            env_variables[field_name] = field.to_python(raw_value)
+            env_variables[field_name] = field.to_python(field_name, raw_value)
 
         self.env_variables = env_variables
 

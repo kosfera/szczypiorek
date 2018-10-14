@@ -13,17 +13,17 @@ class ValidatorError(Exception):
     pass
 
 
-def not_null(value):
+def not_null(field_name, value):
 
-    message = 'Null value are not allowed'
+    message = f'env.{field_name}: Null value are not allowed'
 
     if value is None:
         raise ValidatorError(message)
 
 
-def url(url_text):
+def url(field_name, url_text):
 
-    message = f'Text "{url_text}" is not valid URL'
+    message = f'env.{field_name}: Text "{url_text}" is not valid URL'
 
     # -- in order to force the underlying library to work correctly
     # -- with websockets protocol as well as some other future protocols
@@ -35,18 +35,20 @@ def url(url_text):
     return True
 
 
-def length(text, min_length=None, max_length=None):
+def length(field_name, text, min_length=None, max_length=None):
 
     if min_length:
         message = (
-            f'Text "{text}" is too short. min length: {min_length}')
+            f'env.{field_name}: Text "{text}" is too short. '
+            f'min length: {min_length}')
 
         if vals.length(text, min=min_length) is not True:
             raise ValidatorError(message)
 
     if max_length:
         message = (
-            f'Text "{text}" is too long. max length: {max_length}')
+            f'env.{field_name}: Text "{text}" is too long. '
+            f'max length: {max_length}')
 
         if vals.length(text, max=max_length) is not True:
             raise ValidatorError(message)
