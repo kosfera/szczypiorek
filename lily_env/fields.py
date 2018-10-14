@@ -16,10 +16,10 @@ class BaseField:
         self.allow_null = allow_null
         self.description = description
 
-    def to_python(self, value):
+    def to_python(self, field_name, value):
 
         if not self.allow_null:
-            val.not_null(value)
+            val.not_null(field_name, value)
 
         elif value is None and self.allow_null:
             return val.NULL
@@ -27,10 +27,10 @@ class BaseField:
 
 class BooleanField(BaseField):
 
-    def to_python(self, value):
+    def to_python(self, field_name, value):
 
         # -- base validation
-        result = super(BooleanField, self).to_python(value)
+        result = super(BooleanField, self).to_python(field_name, value)
         if result == val.NULL:
             return None
 
@@ -44,7 +44,8 @@ class BooleanField(BaseField):
             return False
 
         else:
-            raise val.ValidatorError(f'Cannot cast {value} to boolean')
+            raise val.ValidatorError(
+                f'env.{field_name}: Cannot cast {value} to boolean')
 
 
 class CharField(BaseField):
@@ -54,14 +55,15 @@ class CharField(BaseField):
         self.max_length = max_length
         super(CharField, self).__init__(**kwargs)
 
-    def to_python(self, value):
+    def to_python(self, field_name, value):
 
         # -- base validation
-        result = super(CharField, self).to_python(value)
+        result = super(CharField, self).to_python(field_name, value)
         if result == val.NULL:
             return None
 
         val.length(
+            field_name,
             value,
             min_length=self.min_length,
             max_length=self.max_length)
@@ -71,10 +73,10 @@ class CharField(BaseField):
 
 class FloatField(BaseField):
 
-    def to_python(self, value):
+    def to_python(self, field_name, value):
 
         # -- base validation
-        result = super(FloatField, self).to_python(value)
+        result = super(FloatField, self).to_python(field_name, value)
         if result == val.NULL:
             return None
 
@@ -82,15 +84,16 @@ class FloatField(BaseField):
             return float(value)
 
         except ValueError:
-            raise val.ValidatorError(f'Cannot cast {value} to float')
+            raise val.ValidatorError(
+                f'env.{field_name}: Cannot cast {value} to float')
 
 
 class IntegerField(BaseField):
 
-    def to_python(self, value):
+    def to_python(self, field_name, value):
 
         # -- base validation
-        result = super(IntegerField, self).to_python(value)
+        result = super(IntegerField, self).to_python(field_name, value)
         if result == val.NULL:
             return None
 
@@ -98,18 +101,19 @@ class IntegerField(BaseField):
             return int(float(value))
 
         except ValueError:
-            raise val.ValidatorError(f'Cannot cast {value} to integer')
+            raise val.ValidatorError(
+                f'env.{field_name}: Cannot cast {value} to integer')
 
 
 class URLField(BaseField):
 
-    def to_python(self, value):
+    def to_python(self, field_name, value):
 
         # -- base validation
-        result = super(URLField, self).to_python(value)
+        result = super(URLField, self).to_python(field_name, value)
         if result == val.NULL:
             return None
 
-        val.url(value)
+        val.url(field_name, value)
 
         return value

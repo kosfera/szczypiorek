@@ -7,15 +7,15 @@ from lily_env.validator import url, length, ValidatorError
 class UrlTestCase(TestCase):
 
     def test_success(self):
-        assert url('http://hi.io') is True
+        assert url('Y', 'http://hi.io') is True
 
     def test_not_valid(self):
 
         try:
-            url('hi.io')
+            url('Y', 'hi.io')
 
         except ValidatorError as e:
-            assert e.args[0] == 'Text "hi.io" is not valid URL'
+            assert e.args[0] == 'env.Y: Text "hi.io" is not valid URL'
 
         else:
             raise AssertionError('should raise error')
@@ -24,15 +24,16 @@ class UrlTestCase(TestCase):
 class LengthTestCase(TestCase):
 
     def test_success(self):
-        assert length('hello world') is True
+        assert length('Y', 'hello world') is True
 
     def test_not_valid(self):
 
         try:
-            length('hello', min_length=10)
+            length('Y', 'hello', min_length=10)
 
         except ValidatorError as e:
-            assert e.args[0] == 'Text "hello" is too short. min length: 10'
+            assert e.args[0] == (
+                'env.Y: Text "hello" is too short. min length: 10')
 
         else:
             raise AssertionError('should raise error')
