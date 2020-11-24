@@ -31,7 +31,7 @@ setup(
     description=(
         'Lily extension for managing environment variables, '
         'their validity etc.'),
-    version='0.0.4',
+    version='0.0.5',
     url='https://github.com/cosphere-org/lily-env',
     author='CoSphere Tech',
     author_email='contact@cosphere.org',
