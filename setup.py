@@ -13,7 +13,7 @@ setup(
     description=(
         'Lily extension for managing environment variables, '
         'their validity etc.'),
-    version='0.0.1',
+    version='0.0.3',
     author='CoSphere Tech Team',
     url='https://bitbucket.org/goodai/lily-env',
     packages=find_packages(),
