@@ -19,10 +19,10 @@ install:
 # TESTS
 #
 test:  ## run selected tests
-	py.test --cov=./lily_env --cov-config .coveragerc -r w -s -vv $(tests)
+	py.test --cov=./lily_env --cov-fail-under=90 -r w -s -vv $(tests)
 
 test_all:  ## run all available tests
-	py.test --cov=./lily_env --cov-config .coveragerc -r w -s -vv tests
+	py.test --cov=./lily_env --cov-fail-under=90 -r w -s -vv tests
 
 coverage:  # render html coverage report
 	coverage html -d coverage_html && google-chrome coverage_html/index.html
@@ -33,5 +33,5 @@ coverage:  # render html coverage report
 #
 deploy_to_pypi:
 	rm -rf dist && \
-	python setup.py sdist && \
-	twine upload dist/*
+	python setup.py bdist_wheel && \
+	twine upload dist/*.whl
