@@ -37,7 +37,6 @@ sphinx-output
 .venv*
 .cache
 .commands
-.python-version
 # Settings overrides
 .pytest_cache
 

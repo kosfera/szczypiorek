@@ -28,12 +28,12 @@ jobs:
 
       - name: Launch tests
         working-directory: .
-        run: py.test --cov=./lily_env --cov-config .coveragerc -r w -s -vv tests
+        run: py.test --cov=./lily_env --cov-fail-under=90 -r w -s -vv tests
 
       # if launched from master branch, then build and publish to PyPI
       - name: Build and publish
         if: github.ref == 'refs/heads/master'
         working-directory: .
         run: |
-          python setup.py sdist
-          twine upload dist/*
+          python setup.py bdist_wheel
+          twine upload dist/*.whl
