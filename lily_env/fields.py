@@ -1,5 +1,5 @@
 
-from . import validator as val
+from . import fields_validators as val
 
 
 class BaseField:
@@ -9,12 +9,16 @@ class BaseField:
             required=True,
             default=None,
             allow_null=False,
-            description=None):
+            description=None,
+            as_env=None,
+            as_file=None):
 
         self.required = required
         self.default = default
         self.allow_null = allow_null
         self.description = description
+        self.as_env = as_env
+        self.as_file = as_file
 
     def to_python(self, field_name, value):
 
