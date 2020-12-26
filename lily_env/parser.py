@@ -1,11 +1,9 @@
 
 import os
 
-import yaml
-
 from .fields import BaseField
 from .crypto import decrypt
-from .utils import yaml_is_valid, fix, flatten, substitute
+from .utils import load_yaml, flatten, substitute
 
 
 class Env:
@@ -20,12 +18,9 @@ class EnvParser:
     def __init__(self):
         env_path = os.environ.get('LILY_ENV_PATH', 'env.gpg')
 
-        # FIXME: !!!! add one complex test!!!
         with open(env_path, 'r') as f:
             env = decrypt(f.read())
-            yaml_is_valid(env)
-            env = fix(env)
-            env = yaml.load(env, Loader=yaml.FullLoader)
+            env = load_yaml(env)
             env = flatten(env)
             env = substitute(env)
 
@@ -39,7 +34,10 @@ class EnvParser:
 
             env_variables[field_name] = field.to_python(field_name, raw_value)
 
-        self.env_variables = env_variables
+        self._env_variables = env_variables
+
+    def get_env_variables(self):
+        return self._env_variables
 
     @property
     def fields(self):
@@ -53,4 +51,4 @@ class EnvParser:
         return fields
 
     def parse(self):
-        return Env(**self.env_variables)
+        return Env(**self._env_variables)

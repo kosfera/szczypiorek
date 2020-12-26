@@ -3,7 +3,7 @@ from bash import bash
 import pytest
 
 from lily_env.git import assert_is_git_ignored, assert_is_git_repository
-from lily_env.exceptions import FileNotIgnoredError
+from lily_env.exceptions import FileNotIgnoredError, normalize
 from tests import BaseTestCase
 
 
@@ -25,10 +25,19 @@ class GitTestCase(BaseTestCase):
 
         bash('git init')
         self.root_dir.join('.gitignore').write('')
-        f = self.root_dir.join('file.txt').write('whatever')
+        f = self.root_dir.join('file.txt')
+        f.write('whatever')
 
-        with pytest.raises(FileNotIgnoredError):
-            assert_is_git_ignored(str(f))
+        with pytest.raises(FileNotIgnoredError) as e:
+            assert_is_git_ignored('file.txt')
+
+        assert e.value.args[0] == normalize("""
+            Well it seems that the 'file.txt' is not git ignored. Since it
+            appears in the context there's a big chance that it contains some
+            sensitive data.
+
+            Please add it to the '.gitignore' and stop tracking it.
+        """)
 
     #
     # ASSERT_IS_GIT_REPOSITORY

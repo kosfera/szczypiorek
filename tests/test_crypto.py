@@ -11,6 +11,7 @@ from lily_env.crypto import (
     create_encryption_key_if_not_exist,
 )
 from lily_env.exceptions import (
+    normalize,
     DecryptionError,
     EncryptionKeyBrokenBase64Error,
     EncryptionKeyBrokenJsonError,
@@ -72,8 +73,16 @@ class CryptTestCase(BaseTestCase):
             'lily_env.crypto.get_encryption_key'
         ).return_value = 'secret'
 
-        with pytest.raises(DecryptionError):
+        with pytest.raises(DecryptionError) as e:
             decrypt('what is it')
+
+        assert e.value.args[0] == normalize("""
+            Something went wrong while attempting to decrypt. The big chance
+            is that you've used broken encryption key.
+
+            Therefore if you see this message it means that you're trying to
+            do something bad. Stop doing that.
+        """)
 
     def test_decrypt__wrong_passphrase__error(self):
 
@@ -83,15 +92,23 @@ class CryptTestCase(BaseTestCase):
 
         encrypted = encrypt('what is it')
 
-        with pytest.raises(DecryptionError):
+        with pytest.raises(DecryptionError) as e:
             decrypt(encrypted)
+
+        assert e.value.args[0] == normalize("""
+            Something went wrong while attempting to decrypt. The big chance
+            is that you've used broken encryption key.
+
+            Therefore if you see this message it means that you're trying to
+            do something bad. Stop doing that.
+        """)
 
     #
     # GET_ENCRYPTION_KEY
     #
     def test_get_encryption_key__all_good__success(self):
 
-        key = 'd8s9s8c9s8s9ds8d98sd9s89cs8c9s8d'
+        key = 10 * 'd8s9s8c9s8s9ds8d98sd9s89cs8c9s8d'
         self.root_dir.join('.lily_env_encryption_key').write(
             base64.b64encode(json.dumps({'key': key}).encode('utf8')),
             mode='wb')
@@ -104,8 +121,19 @@ class CryptTestCase(BaseTestCase):
             json.dumps({'key': 'key'}).encode('utf8'),
             mode='wb')
 
-        with pytest.raises(EncryptionKeyBrokenBase64Error):
+        with pytest.raises(EncryptionKeyBrokenBase64Error) as e:
             get_encryption_key()
+
+        assert e.value.args[0] == normalize("""
+            The content of the '.lily_env_encryption_key' file was automatically
+            encoded with base64 so that noone tries to mess around with it.
+            So if you see this message that means that someone tried just that.
+
+            Try to get access to the not broken version of the
+            '.lily_env_encryption_key' file or if you have access to the not
+            encrypted version you environment files simply remove the broken
+            file and run 'decrypt' phase one more time.
+        """)  # noqa
 
     def test_get_encryption_key__not_json__error(self):
 
@@ -113,8 +141,18 @@ class CryptTestCase(BaseTestCase):
             base64.b64encode(b'"key": "whatever"'),
             mode='wb')
 
-        with pytest.raises(EncryptionKeyBrokenJsonError):
+        with pytest.raises(EncryptionKeyBrokenJsonError) as e:
             get_encryption_key()
+
+        assert e.value.args[0] == normalize("""
+            The content of the '.lily_env_encryption_key' file must be a valid
+            json file encoded with base64. It takes the following shape:
+
+            {
+                "key": <autmatically generated secret>,
+                "created_datetime": <iso datetime of the key creation>
+            }
+        """)
 
     def test_get_encryption_key__missing_json_fields__error(self):
 
@@ -122,13 +160,33 @@ class CryptTestCase(BaseTestCase):
             base64.b64encode(json.dumps({'not.key': 'what'}).encode('utf8')),
             mode='wb')
 
-        with pytest.raises(EncryptionKeyBrokenJsonError):
+        with pytest.raises(EncryptionKeyBrokenJsonError) as e:
             get_encryption_key()
+
+        assert e.value.args[0] == normalize("""
+            The content of the '.lily_env_encryption_key' file must be a valid
+            json file encoded with base64. It takes the following shape:
+
+            {
+                "key": <autmatically generated secret>,
+                "created_datetime": <iso datetime of the key creation>
+            }
+        """)
 
     def test_get_encryption_key__file_does_not_exist__error(self):
 
-        with pytest.raises(EncryptionKeyFileMissingError):
+        with pytest.raises(EncryptionKeyFileMissingError) as e:
             get_encryption_key()
+
+        assert e.value.args[0] == normalize("""
+            Couldn't find the '.lily_env_encryption_key' file. It is required
+            for the correct functioning of the encryption and decryption
+            phases.
+
+            If you see this message while performing 'decrypt' then
+            simply request the file from fellow code contributor.
+            In the 'encrypt' scenario the file is created automatically.
+        """)
 
     def test_get_encryption_key__file_not_gitignored__error(self):
 
@@ -142,10 +200,12 @@ class CryptTestCase(BaseTestCase):
         ).return_value = True
         self.mocker.patch(
             'lily_env.crypto.assert_is_git_ignored'
-        ).side_effect = FileNotIgnoredError
+        ).side_effect = FileNotIgnoredError('not ignored')
 
-        with pytest.raises(FileNotIgnoredError):
+        with pytest.raises(FileNotIgnoredError) as e:
             get_encryption_key()
+
+        assert e.value.args[0] == normalize('not ignored')
 
     def test_get_encryption_key__to_short__error(self):
 
@@ -154,8 +214,21 @@ class CryptTestCase(BaseTestCase):
             base64.b64encode(json.dumps({'key': key}).encode('utf8')),
             mode='wb')
 
-        with pytest.raises(EncryptionKeyTooShortError):
+        with pytest.raises(EncryptionKeyTooShortError) as e:
             get_encryption_key()
+
+        assert e.value.args[0] == normalize("""
+            So it seems that the key used for encryption hidden in
+            the '.lily_env_encryption_key' file is too short.
+
+            Which means that because of some reason you've decided to mess
+            around with the built-in generator of the secured key.
+
+            Try to get access to the not broken version of the
+            '.lily_env_encryption_key' file or if you have access to the not
+            encrypted version you environment files simply remove the broken
+            file and run 'decrypt' phase one more time.
+        """)
 
     #
     # CREATE_ENCRYPTION_KEY_IF_NOT_EXIST

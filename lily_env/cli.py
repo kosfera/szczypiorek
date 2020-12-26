@@ -1,12 +1,14 @@
 
 from glob import glob
 import os
+import re
 
 import click
 
 from .parser import EnvParser
-from .utils import yaml_is_valid
+from .utils import load_yaml
 from .git import assert_is_git_ignored
+from .exceptions import BaseException
 from . import crypto
 
 
@@ -22,7 +24,7 @@ def print_env():
 
     parser = EnvParser()
     click.echo('\n'.join([
-        f'{k.upper()}: {v}' for k, v in parser.env_variables.items()]))
+        f'{k}: {v}' for k, v in parser.get_env_variables().items()]))
 
 
 @click.command()
@@ -30,16 +32,27 @@ def print_env():
 def encrypt(directory):
     """Encrypt all yml files in a given directory."""
 
-    for filepath in glob(os.path.join(directory, '*.yml')):
+    filepaths = sorted(
+        glob(os.path.join(directory, '*.yml')) +
+        glob(os.path.join(directory, '*.yaml')))
+
+    for filepath in filepaths:
         with open(filepath, 'r') as f:
-            with open(filepath.replace('yml', 'gpg'), 'w') as g:
-                content = f.read()
-                yaml_is_valid(content)
-                g.write(crypto.encrypt(content))
+            gpg_filepath = re.sub(r'(\.yml|\.yaml)', '.gpg', filepath)
 
-            click.secho(f'[ENCRYPTING] {filepath}', color='green')
+            with open(gpg_filepath, 'w') as g:
+                click.secho(f'[ENCRYPTING] {filepath}', color='green')
 
-            assert_is_git_ignored(filepath)
+                try:
+                    assert_is_git_ignored(filepath)
+
+                    content = f.read()
+                    # -- used here only to validate
+                    load_yaml(content)
+                    g.write(crypto.encrypt(content))
+
+                except BaseException as e:
+                    raise click.ClickException(e.args[0])
 
 
 @click.command()
@@ -47,12 +60,17 @@ def encrypt(directory):
 def decrypt(directory):
     for filepath in glob(os.path.join(directory, '*.gpg')):
         with open(filepath, 'r') as f:
-            with open(filepath.replace('gpg', 'yml'), 'w') as g:
-                g.write(crypto.decrypt(f.read()))
+            yml_filepath = filepath.replace('.gpg', '.yml')
+            print('>>> filepath', filepath)
+            print('>>> yml_filepath', yml_filepath)
+            with open(yml_filepath, 'w') as g:
+                click.secho(f'[DECRYPTING] {filepath}', color='green')
 
-            click.secho(f'[DECRYPTING] {filepath}', color='green')
+                try:
+                    g.write(crypto.decrypt(f.read()))
 
-            assert_is_git_ignored(filepath)
+                except BaseException as e:
+                    raise click.ClickException(e.args[0])
 
 
 @click.command()

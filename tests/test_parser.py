@@ -57,6 +57,41 @@ class EnvParserTestCase(BaseTestCase):
         assert e.aws_url == 'http://hello.word.org'
         assert e.number_of_workers == 113
 
+    def test_parse__complex_example(self):
+
+        class MyEnvParser(env.EnvParser):
+
+            secret_key = env.CharField()
+
+            is_important = env.BooleanField()
+
+            aws_url = env.URLField()
+
+            number_of_workers = env.IntegerField()
+
+        content = encrypt(textwrap.dedent('''
+            secret:
+              key: secret.whatever
+            is_important: true
+            aws:
+              url: {{ a.b.c }}
+
+            number:
+              of:
+                workers: '113'
+            a:
+              b:
+                c: http://hello.word.org
+        '''))
+        self.root_dir.join('env.gpg').write(content, mode='w')
+
+        e = MyEnvParser().parse()
+
+        assert e.secret_key == 'secret.whatever'
+        assert e.is_important is True
+        assert e.aws_url == 'http://hello.word.org'
+        assert e.number_of_workers == 113
+
     def test_parse__optional_with_defaults(self):
 
         class MyEnvParser(env.EnvParser):

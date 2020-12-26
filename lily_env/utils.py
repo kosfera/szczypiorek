@@ -2,6 +2,20 @@
 import re
 import yaml
 
+from .exceptions import BrokenYamlError, MissingSubstitutionKeyError
+
+
+def load_yaml(yaml_content):
+    try:
+        return yaml.load(fix_yaml(yaml_content), Loader=yaml.FullLoader)
+
+    except yaml.parser.ParserError:
+        raise BrokenYamlError("""
+            It seems that you're yaml file is broken.
+
+            Run in through sone online validators to find the reason behind it.
+        """)
+
 
 def fix_yaml(yaml_content):
     FIX_PATTERN = re.compile(  # noqa
@@ -11,18 +25,12 @@ def fix_yaml(yaml_content):
         r'\{\{\s*'
         r'(?P<variable>[\w\.\-]+)'
         r'\s*\}\}'
-        r'(?P<rest>[\w\/\_\-\?\{\}\=]*)'
+        r'(?P<rest>[\w\/\_\-\?\{\}\=\.]*)'
     )
 
     return FIX_PATTERN.sub(
         r"\g<start>\g<indent>\g<key>: '{{\g<variable>}}\g<rest>'",
         yaml_content)
-
-
-def yaml_is_valid(yaml_content):
-    yaml.load(fix_yaml(yaml_content), Loader=yaml.FullLoader)
-
-    return True
 
 
 def flatten(env):
@@ -53,7 +61,10 @@ def substitute(env):
             return env[key.replace('.', '_')]
 
         except KeyError:
-            raise KeyError(f'Cannot find {key}')
+            raise MissingSubstitutionKeyError(f"""
+                Your template variable is referring non-existent value under
+                the '{key}' key.
+            """)
 
     for k, v in env.items():
         if isinstance(v, str):

@@ -1,5 +1,26 @@
 
+import textwrap
+
+
+def normalize(text):
+    return textwrap.dedent(text).strip()
+
+
 class BaseException(Exception):
+
+    def __init__(self, message=None):
+
+        super(BaseException, self).__init__(normalize(message or ''))
+
+
+#
+# UTILS
+#
+class BrokenYamlError(BaseException):
+    pass
+
+
+class MissingSubstitutionKeyError(BaseException):
     pass
 
 

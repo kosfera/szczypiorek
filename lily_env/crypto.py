@@ -18,7 +18,6 @@ from .exceptions import (
 )
 from .constants import (
     ENCRYPTION_KEY_FILE,
-    ENCRYPTION_KEY_MIN_LENGTH,
     ENCRYPTION_KEY_LENGTH,
 )
 
@@ -46,7 +45,13 @@ def decrypt(content):
         return str(decrypted)
 
     else:
-        raise DecryptionError()
+        raise DecryptionError("""
+            Something went wrong while attempting to decrypt. The big chance
+            is that you've used broken encryption key.
+
+            Therefore if you see this message it means that you're trying to
+            do something bad. Stop doing that.
+        """)
 
 
 def get_encryption_key():
@@ -58,19 +63,55 @@ def get_encryption_key():
             encryption_key = json.loads(content)['key']
 
     except FileNotFoundError:
-        raise EncryptionKeyFileMissingError()
+        raise EncryptionKeyFileMissingError(f"""
+            Couldn't find the '{ENCRYPTION_KEY_FILE}' file. It is required
+            for the correct functioning of the encryption and decryption
+            phases.
+
+            If you see this message while performing 'decrypt' then
+            simply request the file from fellow code contributor.
+            In the 'encrypt' scenario the file is created automatically.
+        """)
 
     except base64.binascii.Error:
-        raise EncryptionKeyBrokenBase64Error()
+        raise EncryptionKeyBrokenBase64Error(f"""
+            The content of the '{ENCRYPTION_KEY_FILE}' file was automatically
+            encoded with base64 so that noone tries to mess around with it.
+            So if you see this message that means that someone tried just that.
+
+            Try to get access to the not broken version of the
+            '{ENCRYPTION_KEY_FILE}' file or if you have access to the not
+            encrypted version you environment files simply remove the broken
+            file and run 'decrypt' phase one more time.
+        """)
 
     except (KeyError, json.decoder.JSONDecodeError):
-        raise EncryptionKeyBrokenJsonError()
+        raise EncryptionKeyBrokenJsonError(f"""
+            The content of the '{ENCRYPTION_KEY_FILE}' file must be a valid
+            json file encoded with base64. It takes the following shape:
+
+            {{
+                "key": <autmatically generated secret>,
+                "created_datetime": <iso datetime of the key creation>
+            }}
+        """)
 
     if assert_is_git_repository():
         assert_is_git_ignored(ENCRYPTION_KEY_FILE)
 
-    if len(encryption_key) < ENCRYPTION_KEY_MIN_LENGTH:
-        raise EncryptionKeyTooShortError()
+    if len(encryption_key) < ENCRYPTION_KEY_LENGTH:
+        raise EncryptionKeyTooShortError(f"""
+            So it seems that the key used for encryption hidden in
+            the '{ENCRYPTION_KEY_FILE}' file is too short.
+
+            Which means that because of some reason you've decided to mess
+            around with the built-in generator of the secured key.
+
+            Try to get access to the not broken version of the
+            '{ENCRYPTION_KEY_FILE}' file or if you have access to the not
+            encrypted version you environment files simply remove the broken
+            file and run 'decrypt' phase one more time.
+        """)
 
     return encryption_key
 
