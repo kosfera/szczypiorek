@@ -1,13 +1,59 @@
 
-# Lily-Env - environment variables management by humans for humans
+# Lily-Env - environment management for humans
 
-Foundations:
-- Detect broken environments
-- Inform statically and dynamically about any issues with the env.
+**lily-env** allows one:
+1. to define ones settings / credentials as a part of incredibly readable and flexible **yaml** format
+2. using as an extra **template variables** and **imports**
+3. and then define with minimal amount of code **environment parsers** which can be used to parse such yaml files
+4. and allow one to use them directly in their python code
+5. all of that on top of the mechanism allowing the secured storage and usage of most likely containing sensitive information yaml files.
 
 ## Getting Started
 
-TODO: add it
+In order to start one needs those thing:
+
+### Creating yaml env file
+
+It should contain some sort of settings, let's create one under `deploy/development.yml` folder:
+
+```yaml
+aws:
+  secret: this is my secret
+  is_sensitive: true
+  age_days: 121
+```
+
+### Creating parser
+
+Somewhere in your code create a parser (e.g. `env.py`):
+
+```python
+import lily_env as ev
+
+
+class MyEnvParser(ev.EnvParser):
+
+    aws_secret = ev.CharField()
+
+    aws_is_sensitive = ev.BooleanField()
+
+    aws_age_days = ev.IntegerField()
+
+
+env = MyEnvParser().parse()
+
+```
+
+Finally one must make sure that the yaml file will be protected therefore run in the terminal:
+```bash
+lily-env encrypt ./deploy
+```
+
+Make sure to add to `.gitignore`
+```
+.lily_env_encryption_key
+deploy/development.yml
+```
 
 ## The CLI - Available commands
 
@@ -17,30 +63,7 @@ TODO: add it
 
 TODO: add it
 
-## The Environment YAML files - Reference
-
-TODO: add it
-    - decribe the usage of template variables
-
-## FAQ
-
-### One contributor changed gpg files would after PUSH & PULL sequence see the changes?
-
-TODO: add it
-
-### One contributor is changing the yaml files but the other cannot see those reflected in the gpg file?
-
-TODO: add it
-
-### How lily-env behaves when deployed?
-
-TODO: add it
-
-### How lily-env behaves locally?
-
-TODO: add it
-
-## Defining the Environment Parser
+USE BELOW LEGACY AS INSPIRATION:
 
 Use the below example as a inspiration regarding type of fields one can define.
 
@@ -76,6 +99,30 @@ Besides those some fields are supporting extra fields:
 
     - `min_length` - validates if minimum amount of characters was provided
     - `max_length` - validates if maximum amount of characters was provided
+
+
+## The Environment YAML files - Reference
+
+TODO: add it
+    - decribe the usage of template variables
+
+## FAQ
+
+### One contributor changed gpg files would after PUSH & PULL sequence see the changes?
+
+TODO: add it
+
+### One contributor is changing the yaml files but the other cannot see those reflected in the gpg file?
+
+TODO: add it
+
+### How lily-env behaves when deployed?
+
+TODO: add it
+
+### How lily-env behaves locally?
+
+TODO: add it
 
 ## TODOS
 
