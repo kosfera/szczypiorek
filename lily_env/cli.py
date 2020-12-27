@@ -61,8 +61,6 @@ def decrypt(directory):
     for filepath in glob(os.path.join(directory, '*.gpg')):
         with open(filepath, 'r') as f:
             yml_filepath = filepath.replace('.gpg', '.yml')
-            print('>>> filepath', filepath)
-            print('>>> yml_filepath', yml_filepath)
             with open(yml_filepath, 'w') as g:
                 click.secho(f'[DECRYPTING] {filepath}', color='green')
 
