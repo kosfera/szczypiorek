@@ -55,6 +55,29 @@ Make sure to add to `.gitignore`
 deploy/development.yml
 ```
 
+## FAQ
+
+### How lily-env behaves when deployed?
+
+When deployed for the parser to work correctly one needs two things:
+1. A single `env.gpg` file available in the root of the project
+2. A `.lily_env_encryption_key` storing the secret generated during the `encrypt` phase. WARNING! Make sure that this file is not kept in the repository itself but rather created dynamically during the deployment phase. Till that time it could be stored in for example `github secrets` or similar system such as `AWS secrets`, `Azure Key Vault` etc.
+
+### How lily-env behaves locally?
+
+For the `lily-env` to work locally one needs 3 things:
+1. One `gpg` file for example `development.gpg`
+2. A environment variable `LILY_ENV_PATH=development.gpg` pointing to that file's location
+3. A `.lily_env_encryption_key` file where a secret for decryption is stored.
+
+### One contributor changed gpg files would after PUSH & PULL sequence see the changes?
+
+TODO: add it
+
+### One contributor is changing the yaml files but the other cannot see those reflected in the gpg file?
+
+TODO: add it
+
 ## The CLI - Available commands
 
 TODO: add it
@@ -105,24 +128,6 @@ Besides those some fields are supporting extra fields:
 
 TODO: add it
     - decribe the usage of template variables
-
-## FAQ
-
-### One contributor changed gpg files would after PUSH & PULL sequence see the changes?
-
-TODO: add it
-
-### One contributor is changing the yaml files but the other cannot see those reflected in the gpg file?
-
-TODO: add it
-
-### How lily-env behaves when deployed?
-
-TODO: add it
-
-### How lily-env behaves locally?
-
-TODO: add it
 
 ## TODOS
 
