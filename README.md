@@ -79,6 +79,8 @@ Besides those some fields are supporting extra fields:
 
 ## TODOS
 
+There's still a lot of work to do, even though the basic functionality of **lily-env** is production ready:
+
 [ ] [HIGH PRIO] handle `as_env` and  `as_file` attributes of the fields
 
 [ ] [HIGH PRIO] use https://github.com/squidfunk/mkdocs-material for docs
