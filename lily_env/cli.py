@@ -2,6 +2,7 @@
 from glob import glob
 import os
 import re
+import importlib
 
 import click
 
@@ -19,12 +20,16 @@ def cli():
 
 
 @click.command()
-def print_env():
+@click.argument('env_path')
+def print_env(env_path):
     """Print currently loaded env variables into stdout."""
 
-    parser = EnvParser()
-    click.echo('\n'.join([
-        f'{k}: {v}' for k, v in parser.get_env_variables().items()]))
+    env_path_parts = env_path.split('.')
+    env_path = '.'.join(env_path_parts[:-1])
+    env_variable = env_path_parts[-1]
+
+    env = getattr(importlib.import_module(env_path), env_variable)
+    click.echo('\n'.join([f'{k}: {v}' for k, v in env.env.items()]))
 
 
 @click.command()

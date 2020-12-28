@@ -80,7 +80,10 @@ TODO: add it
 
 ## The CLI - Available commands
 
-TODO: add it
+FIXME: add it!!!
+```bash
+lily_env print-env cosphere_api.conf.env.api_env
+```
 
 ## The Environment Parser - Available fields
 
@@ -134,6 +137,10 @@ TODO: add it
 There's still a lot of work to do, even though the basic functionality of **lily-env** is production ready:
 
 - [ ] **[HIGH PRIO]** handle `as_env` and  `as_file` attributes of the fields
+
+- [ ] **[HIGH PRIO]** replace the parsing mechanism with Pydentic models to make it more modern and more like python static typing.
+
+- [ ] **[HIGH PRIO]** support template variables when used without breaking, e.g. when someone uses from the beginning '{{ a.b.c }}' pattern.
 
 - [ ] **[HIGH PRIO]** use https://github.com/squidfunk/mkdocs-material for docs
 

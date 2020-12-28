@@ -8,9 +8,11 @@ from .utils import load_yaml, flatten, substitute
 
 class Env:
 
-    def __init__(self, **data):
-        for k, v in data.items():
+    def __init__(self, **env):
+        for k, v in env.items():
             setattr(self, k, v)
+
+        self.env = env
 
 
 class EnvParser:
@@ -35,9 +37,6 @@ class EnvParser:
             env_variables[field_name] = field.to_python(field_name, raw_value)
 
         self._env_variables = env_variables
-
-    def get_env_variables(self):
-        return self._env_variables
 
     @property
     def fields(self):
