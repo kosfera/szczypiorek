@@ -10,6 +10,14 @@ from lily_env.cli import cli
 from tests import BaseTestCase
 
 
+class MyEnvParser(env.EnvParser):
+
+    a = env.CharField()
+
+
+my_env = None
+
+
 class CliTestCase(BaseTestCase):
 
     def setUp(self):
@@ -21,22 +29,16 @@ class CliTestCase(BaseTestCase):
     #
     def test_print_env(self):
 
-        class MyEnvParser(env.EnvParser):
-
-            a = env.CharField()
-
         content = encrypt(textwrap.dedent('''
             a: b
         '''))
         self.root_dir.join('env.gpg').write(content, mode='w')
-        self.mocker.patch.object(
-            env.EnvParser,
-            'get_env_variables'
-        ).return_value = {'a': 'b'}
 
-        MyEnvParser().parse()
+        global my_env
+        my_env = MyEnvParser().parse()  # noqa
 
-        result = self.runner.invoke(cli, ['print-env'])
+        result = self.runner.invoke(
+            cli, ['print-env', 'tests.test_cli.my_env'])
 
         assert result.exit_code == 0
         assert result.output.strip() == textwrap.dedent('''
