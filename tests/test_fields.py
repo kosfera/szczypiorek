@@ -8,7 +8,7 @@ from lily_env.fields import (
     IntegerField,
     URLField,
 )
-from lily_env.validator import ValidatorError
+from lily_env.exceptions import ValidatorError
 
 
 class BooleanFieldTestCase(TestCase):

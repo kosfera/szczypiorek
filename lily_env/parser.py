@@ -1,51 +1,42 @@
 
-import json
 import os
 
 from .fields import BaseField
+from .crypto import decrypt
+from .utils import load_yaml, flatten, substitute
 
 
 class Env:
-    """
-    Class which captures all already validated and discovered environment
-    variables.
 
-    """
-
-    def __init__(self, **kwargs):
-        for k, v in kwargs.items():
+    def __init__(self, **env):
+        for k, v in env.items():
             setattr(self, k, v)
 
-        with open(Env.get_dump_filepath(), 'w') as f:
-            f.write(json.dumps(kwargs))
-
-    @classmethod
-    def from_dump(cls):
-        with open(Env.get_dump_filepath(), 'r') as f:
-            return json.loads(f.read())
-
-    @staticmethod
-    def get_dump_filepath():
-        base_dir = os.path.dirname(__file__)
-        return f'{base_dir}/lily_env_dump.json'
+        self.env = env
 
 
 class EnvParser:
 
     def __init__(self):
+        env_path = os.environ.get('LILY_ENV_PATH', 'env.gpg')
+
+        with open(env_path, 'r') as f:
+            env = decrypt(f.read())
+            env = load_yaml(env)
+            env = flatten(env)
+            env = substitute(env)
 
         env_variables = {}
         for field_name, field in self.fields.items():
             if field.required:
-                raw_value = os.environ[field_name.upper()]
+                raw_value = env[field_name]
 
             else:
-                raw_value = os.environ.get(
-                    field_name.upper(), field.default)
+                raw_value = env.get(field_name, field.default)
 
             env_variables[field_name] = field.to_python(field_name, raw_value)
 
-        self.env_variables = env_variables
+        self._env_variables = env_variables
 
     @property
     def fields(self):
@@ -59,4 +50,4 @@ class EnvParser:
         return fields
 
     def parse(self):
-        return Env(**self.env_variables)
+        return Env(**self._env_variables)

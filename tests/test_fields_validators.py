@@ -1,7 +1,7 @@
 
 from unittest import TestCase
 
-from lily_env.validator import url, length, ValidatorError
+from lily_env.fields_validators import url, length, ValidatorError
 
 
 class UrlTestCase(TestCase):

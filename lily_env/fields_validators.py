@@ -4,15 +4,15 @@ import re
 # -- import all external validators, some of them will be overloaded
 # -- with the custom implementations
 import validators as vals  # noqa
+from .exceptions import ValidatorError
 
 
 NULL = 'NULL'
 
 
-class ValidatorError(Exception):
-    pass
-
-
+#
+# FIELD VALIDATORS
+#
 def not_null(field_name, value):
 
     message = f'env.{field_name}: Null value are not allowed'

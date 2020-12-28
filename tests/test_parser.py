@@ -1,65 +1,29 @@
 
-import os
-from unittest import TestCase
+import textwrap
 
 import pytest
 
 import lily_env as env
 from lily_env.parser import Env
+from lily_env.exceptions import ValidatorError
+from lily_env.crypto import encrypt
+from tests import BaseTestCase
 
 
-class EnvTestCase(TestCase):
-
-    @pytest.fixture(autouse=True)
-    def initfixtures(self, mocker, tmpdir):
-        self.mocker = mocker
-        self.tmpdir = tmpdir
+class EnvTestCase(BaseTestCase):
 
     #
     # __INIT__
     #
     def test__init__(self):
 
-        self.tmpdir.join('lily_env_dump.json').write('hey')
-        self.mocker.patch.object(
-            Env,
-            'get_dump_filepath'
-        ).return_value = str(self.tmpdir.join('lily_env_dump.json'))
-
         e = Env(is_prod=True, secret_key='hello')
 
         assert e.is_prod is True
         assert e.secret_key == 'hello'
-        assert self.tmpdir.join('lily_env_dump.json').read() == (
-            '{"is_prod": true, "secret_key": "hello"}')
-
-    #
-    # FROM_DUMP
-    #
-    def test_from_dump(self):
-
-        self.tmpdir.join('lily_env_dump.json').write(
-            '{"is_prod": false, "secret_key": "hello"}')
-        self.mocker.patch.object(
-            Env,
-            'get_dump_filepath'
-        ).return_value = str(self.tmpdir.join('lily_env_dump.json'))
-
-        assert Env.from_dump() == {"is_prod": False, "secret_key": "hello"}
 
 
-class EnvParserTestCase(TestCase):
-
-    def setUp(self):
-
-        try:
-            del os.environ['SECRET_KEY']
-            del os.environ['IS_IMPORTANT']
-            del os.environ['AWS_URL']
-            del os.environ['NUMBER_OF_WORKERS']
-
-        except KeyError:
-            pass
+class EnvParserTestCase(BaseTestCase):
 
     def test_parse(self):
 
@@ -73,10 +37,53 @@ class EnvParserTestCase(TestCase):
 
             number_of_workers = env.IntegerField()
 
-        os.environ['SECRET_KEY'] = 'secret.whatever'
-        os.environ['IS_IMPORTANT'] = 'true'
-        os.environ['AWS_URL'] = 'http://hello.word.org'
-        os.environ['NUMBER_OF_WORKERS'] = '113'
+        content = encrypt(textwrap.dedent('''
+            secret:
+              key: secret.whatever
+            is_important: true
+            aws:
+              url: http://hello.word.org
+
+            number:
+              of:
+                workers: '113'
+        '''))
+        self.root_dir.join('env.gpg').write(content, mode='w')
+
+        e = MyEnvParser().parse()
+
+        assert e.secret_key == 'secret.whatever'
+        assert e.is_important is True
+        assert e.aws_url == 'http://hello.word.org'
+        assert e.number_of_workers == 113
+
+    def test_parse__complex_example(self):
+
+        class MyEnvParser(env.EnvParser):
+
+            secret_key = env.CharField()
+
+            is_important = env.BooleanField()
+
+            aws_url = env.URLField()
+
+            number_of_workers = env.IntegerField()
+
+        content = encrypt(textwrap.dedent('''
+            secret:
+              key: secret.whatever
+            is_important: true
+            aws:
+              url: {{ a.b.c }}
+
+            number:
+              of:
+                workers: '113'
+            a:
+              b:
+                c: http://hello.word.org
+        '''))
+        self.root_dir.join('env.gpg').write(content, mode='w')
 
         e = MyEnvParser().parse()
 
@@ -96,6 +103,12 @@ class EnvParserTestCase(TestCase):
             aws_url = env.URLField(required=False, default='http://hi.pl')
 
             number_of_workers = env.IntegerField(required=False, default=12)
+
+        content = encrypt(textwrap.dedent('''
+            what:
+              event: yo
+        '''))
+        self.root_dir.join('env.gpg').write(content, mode='w')
 
         e = MyEnvParser().parse()
 
@@ -117,6 +130,12 @@ class EnvParserTestCase(TestCase):
             number_of_workers = env.IntegerField(
                 required=False, allow_null=True)
 
+        content = encrypt(textwrap.dedent('''
+            what:
+              event: yo
+        '''))
+        self.root_dir.join('env.gpg').write(content, mode='w')
+
         e = MyEnvParser().parse()
 
         assert e.secret_key is None
@@ -136,17 +155,21 @@ class EnvParserTestCase(TestCase):
 
             number_of_workers = env.IntegerField()
 
-        os.environ['SECRET_KEY'] = 'secret.whatever'
-        os.environ['IS_IMPORTANT'] = 'whatever'
-        os.environ['AWS_URL'] = 'not.url'
-        os.environ['NUMBER_OF_WORKERS'] = 'not.number'
+        content = encrypt(textwrap.dedent('''
+            secret:
+              key: secret.whatever
+            is_important: whatever
+            aws:
+              url: not.url
 
-        try:
+            number:
+              of:
+                workers: not.number
+        '''))
+        self.root_dir.join('env.gpg').write(content, mode='w')
+
+        with pytest.raises(ValidatorError) as e:
             MyEnvParser().parse()
 
-        except env.ValidatorError as e:
-            assert e.args[0] == (
-                'env.aws_url: Text "not.url" is not valid URL')
-
-        else:
-            raise AssertionError('should raise exception')
+        assert e.value.args[0] == (
+            'env.aws_url: Text "not.url" is not valid URL')

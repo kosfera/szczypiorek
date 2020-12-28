@@ -1,82 +1,146 @@
 
-import os
-from unittest import TestCase
 import textwrap
 
 from click.testing import CliRunner
-import pytest
+from bash import bash
 
 import lily_env as env
+from lily_env.crypto import encrypt
 from lily_env.cli import cli
-from lily_env.parser import Env
+from tests import BaseTestCase
 
 
-class CliTestCase(TestCase):
+class MyEnvParser(env.EnvParser):
 
-    @pytest.fixture(autouse=True)
-    def initfixtures(self, mocker, tmpdir):
-        self.mocker = mocker
-        self.tmpdir = tmpdir
+    a = env.CharField()
+
+
+my_env = None
+
+
+class CliTestCase(BaseTestCase):
 
     def setUp(self):
+        super(CliTestCase, self).setUp()
         self.runner = CliRunner()
 
     #
-    # DUMP
+    # PRINT_ENV
     #
-    def test_dump(self):
+    def test_print_env(self):
 
-        class MyEnvParser(env.EnvParser):
+        content = encrypt(textwrap.dedent('''
+            a: b
+        '''))
+        self.root_dir.join('env.gpg').write(content, mode='w')
 
-            secret_key = env.CharField()
+        global my_env
+        my_env = MyEnvParser().parse()  # noqa
 
-            is_important = env.BooleanField()
-
-            aws_url = env.URLField()
-
-            number_of_workers = env.IntegerField()
-
-        os.environ['SECRET_KEY'] = 'secret.whatever'
-        os.environ['IS_IMPORTANT'] = 'true'
-        os.environ['AWS_URL'] = 'http://hello.word.org'
-        os.environ['NUMBER_OF_WORKERS'] = '113'
-
-        self.tmpdir.join('lily_env_dump.json').write('hey')
-        self.mocker.patch.object(
-            Env,
-            'get_dump_filepath'
-        ).return_value = str(self.tmpdir.join('lily_env_dump.json'))
-
-        MyEnvParser().parse()
-
-        result = self.runner.invoke(cli, ['dump'])
+        result = self.runner.invoke(
+            cli, ['print-env', 'tests.test_cli.my_env'])
 
         assert result.exit_code == 0
         assert result.output.strip() == textwrap.dedent('''
-            AWS_URL: http://hello.word.org
-            IS_IMPORTANT: True
-            NUMBER_OF_WORKERS: 113
-            SECRET_KEY: secret.whatever
+            a: b
         ''').strip()
 
-    def test_dump__dump_was_not_created(self):
+    #
+    # ENCRYPT
+    #
+    def test_encrypt__no_yaml_files(self):
 
-        class MyEnvParser(env.EnvParser):
+        result = self.runner.invoke(cli, ['encrypt', str(self.root_dir)])
 
-            secret_key = env.CharField()
+        assert result.exit_code == 0
+        assert result.output.strip() == ''
 
-        os.environ['SECRET_KEY'] = 'secret.whatever'
+    def test_encrypt__some_yaml_files(self):
 
-        self.mocker.patch.object(
-            Env,
-            'get_dump_filepath'
-        ).return_value = str(self.tmpdir.join('lily_env_dump.json'))
+        self.root_dir.join('a.yml').write(textwrap.dedent('''
+            a:
+             b: true
+             c: 12
+        ''').strip())
+        self.root_dir.join('b.yml').write(textwrap.dedent('''
+            a: whatever
+        ''').strip())
+        bash('git init')
+        self.root_dir.join('.gitignore').write(
+            '.lily_env_encryption_key\n'
+            'a.yml\n'
+            'b.yml\n'
+        )
 
-        MyEnvParser()
+        result = self.runner.invoke(cli, ['encrypt', str(self.root_dir)])
 
-        result = self.runner.invoke(cli, ['dump'])
+        assert result.exit_code == 0
+        assert sorted(self.root_dir.listdir()) == [
+            str(self.root_dir.join('.git')),
+            str(self.root_dir.join('.gitignore')),
+            str(self.root_dir.join('.lily_env_encryption_key')),
+            str(self.root_dir.join('a.gpg')),
+            str(self.root_dir.join('a.yml')),
+            str(self.root_dir.join('b.gpg')),
+            str(self.root_dir.join('b.yml')),
+        ]
+
+    def test_encrypt__some_error(self):
+
+        self.root_dir.join('a.yml').write(textwrap.dedent('''
+            a:
+             b: true
+             c: 12
+        ''').strip())
+
+        result = self.runner.invoke(cli, ['encrypt', str(self.root_dir)])
 
         assert result.exit_code == 1
-        assert result.output.strip() == (
-            'Error: Dump file does not exist, run `parse` on your '
-            '`EnvParser` instance in order to render it')
+        assert 'Error: Well it seems that the' in result.output.strip()
+
+    #
+    # DECRYPT
+    #
+    def test_decrypt__no_gpg_files(self):
+
+        result = self.runner.invoke(cli, ['decrypt', str(self.root_dir)])
+
+        assert result.exit_code == 0
+        assert result.output.strip() == ''
+
+    def test_decrypt__some_gpg_files(self):
+
+        content = encrypt(textwrap.dedent('''
+            secret:
+              key: secret.whatever
+            is_important: true
+            aws:
+              url: {{ a.b.c }}
+
+            number:
+              of:
+                workers: '113'
+            a:
+              b:
+                c: http://hello.word.org
+        '''))
+        self.root_dir.join('env.gpg').write(content, mode='w')
+
+        result = self.runner.invoke(cli, ['decrypt', str(self.root_dir)])
+        assert result.exit_code == 0
+        assert sorted(self.root_dir.listdir()) == [
+            str(self.root_dir.join('.lily_env_encryption_key')),
+            str(self.root_dir.join('env.gpg')),
+            str(self.root_dir.join('env.yml')),
+        ]
+
+    def test_decrypt__some_error(self):
+
+        self.root_dir.join('a.gpg').write('whatever')
+
+        result = self.runner.invoke(cli, ['decrypt', str(self.root_dir)])
+
+        assert result.exit_code == 1
+        assert (
+            "Couldn't find the '.lily_env_encryption_key' file" in
+            result.output.strip())
