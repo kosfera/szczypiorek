@@ -6,7 +6,6 @@ import importlib
 
 import click
 
-from .parser import EnvParser
 from .utils import load_yaml
 from .git import assert_is_git_ignored
 from .exceptions import BaseException
