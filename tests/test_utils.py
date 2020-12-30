@@ -3,13 +3,13 @@ import textwrap
 
 import pytest
 
-from lily_env.utils import (
+from szczypiorek.utils import (
     fix_yaml,
     load_yaml,
     flatten,
     substitute,
 )
-from lily_env.exceptions import (
+from szczypiorek.exceptions import (
     BrokenYamlError,
     MissingSubstitutionKeyError,
     normalize,
@@ -91,6 +91,22 @@ class UtilsTestCase(BaseTestCase):
             c: true
             d: '{{g.b.g}}.example.pl'
             f: '{{ff}}/payments/success?session_id={CHECKOUT_SESSION_ID}'
+        ''')
+
+    def test_fix_yaml__do_not_fix_is_already_fixed(self):
+
+        assert fix_yaml(n('''
+            a:
+              b: '{{whatever}}'
+            c: true
+            d: '{{g.b.g}}.example.pl'
+            f: '{{ ff }}/payments/success?session_id={CHECKOUT_SESSION_ID}'
+        ''')) == n('''
+            a:
+              b: '{{whatever}}'
+            c: true
+            d: '{{g.b.g}}.example.pl'
+            f: '{{ ff }}/payments/success?session_id={CHECKOUT_SESSION_ID}'
         ''')
 
     #

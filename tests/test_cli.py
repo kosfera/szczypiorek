@@ -4,9 +4,9 @@ import textwrap
 from click.testing import CliRunner
 from bash import bash
 
-import lily_env as env
-from lily_env.crypto import encrypt
-from lily_env.cli import cli
+import szczypiorek as env
+from szczypiorek.crypto import encrypt
+from szczypiorek.cli import cli
 from tests import BaseTestCase
 
 
@@ -67,7 +67,7 @@ class CliTestCase(BaseTestCase):
         ''').strip())
         bash('git init')
         self.root_dir.join('.gitignore').write(
-            '.lily_env_encryption_key\n'
+            '.szczypiorek_encryption_key\n'
             'a.yml\n'
             'b.yml\n'
         )
@@ -78,7 +78,7 @@ class CliTestCase(BaseTestCase):
         assert sorted(self.root_dir.listdir()) == [
             str(self.root_dir.join('.git')),
             str(self.root_dir.join('.gitignore')),
-            str(self.root_dir.join('.lily_env_encryption_key')),
+            str(self.root_dir.join('.szczypiorek_encryption_key')),
             str(self.root_dir.join('a.gpg')),
             str(self.root_dir.join('a.yml')),
             str(self.root_dir.join('b.gpg')),
@@ -129,7 +129,7 @@ class CliTestCase(BaseTestCase):
         result = self.runner.invoke(cli, ['decrypt', str(self.root_dir)])
         assert result.exit_code == 0
         assert sorted(self.root_dir.listdir()) == [
-            str(self.root_dir.join('.lily_env_encryption_key')),
+            str(self.root_dir.join('.szczypiorek_encryption_key')),
             str(self.root_dir.join('env.gpg')),
             str(self.root_dir.join('env.yml')),
         ]
@@ -142,5 +142,5 @@ class CliTestCase(BaseTestCase):
 
         assert result.exit_code == 1
         assert (
-            "Couldn't find the '.lily_env_encryption_key' file" in
+            "Couldn't find the '.szczypiorek_encryption_key' file" in
             result.output.strip())

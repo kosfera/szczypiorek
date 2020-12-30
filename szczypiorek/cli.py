@@ -14,7 +14,7 @@ from . import crypto
 
 @click.group()
 def cli():
-    """Expose multiple commands allowing one to work with lily_env."""
+    """Expose multiple commands allowing one to work with szczypiorek."""
     pass
 
 
@@ -75,12 +75,6 @@ def decrypt(directory):
                     raise click.ClickException(e.args[0])
 
 
-@click.command()
-def validate():
-    pass
-
-
 cli.add_command(encrypt)
 cli.add_command(decrypt)
-cli.add_command(validate)
 cli.add_command(print_env)

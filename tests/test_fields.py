@@ -1,14 +1,14 @@
 
 from unittest import TestCase
 
-from lily_env.fields import (
+from szczypiorek.fields import (
     BooleanField,
     CharField,
     FloatField,
     IntegerField,
     URLField,
 )
-from lily_env.exceptions import ValidatorError
+from szczypiorek.exceptions import ValidatorError
 
 
 class BooleanFieldTestCase(TestCase):

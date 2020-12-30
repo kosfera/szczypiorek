@@ -4,13 +4,13 @@ import base64
 
 import pytest
 
-from lily_env.crypto import (
+from szczypiorek.crypto import (
     encrypt,
     decrypt,
     get_encryption_key,
     create_encryption_key_if_not_exist,
 )
-from lily_env.exceptions import (
+from szczypiorek.exceptions import (
     normalize,
     DecryptionError,
     EncryptionKeyBrokenBase64Error,
@@ -30,7 +30,7 @@ class CryptTestCase(BaseTestCase):
     def test_encrypt__empty_content__success(self):
 
         self.mocker.patch(
-            'lily_env.crypto.get_encryption_key').return_value = 'secret'
+            'szczypiorek.crypto.get_encryption_key').return_value = 'secret'
 
         encrypted = encrypt('').strip()
 
@@ -40,14 +40,16 @@ class CryptTestCase(BaseTestCase):
 
     def test_encrypt__no_encryption_key__success(self):
 
-        assert self.root_dir.join('.lily_env_encryption_key').exists() is False
+        assert self.root_dir.join(
+            '.szczypiorek_encryption_key').exists() is False
 
         encrypted = encrypt('hello world').strip()
 
         assert encrypted.startswith('-----BEGIN PGP MESSAGE-----')
         assert encrypted.endswith('-----END PGP MESSAGE-----')
         assert decrypt(encrypted) == 'hello world'
-        assert self.root_dir.join('.lily_env_encryption_key').exists() is True
+        assert self.root_dir.join(
+            '.szczypiorek_encryption_key').exists() is True
 
     def test_encrypt__encryption_key_exists__success(self):
 
@@ -58,7 +60,8 @@ class CryptTestCase(BaseTestCase):
         assert encrypted.startswith('-----BEGIN PGP MESSAGE-----')
         assert encrypted.endswith('-----END PGP MESSAGE-----')
         assert decrypt(encrypted) == 'hello world'
-        assert len(self.root_dir.join('.lily_env_encryption_key').read()) > 128
+        assert len(self.root_dir.join(
+            '.szczypiorek_encryption_key').read()) > 128
 
     #
     # DECRYPT
@@ -70,7 +73,7 @@ class CryptTestCase(BaseTestCase):
     def test_decrypt__wrong_content__error(self):
 
         self.mocker.patch(
-            'lily_env.crypto.get_encryption_key'
+            'szczypiorek.crypto.get_encryption_key'
         ).return_value = 'secret'
 
         with pytest.raises(DecryptionError) as e:
@@ -87,7 +90,7 @@ class CryptTestCase(BaseTestCase):
     def test_decrypt__wrong_passphrase__error(self):
 
         self.mocker.patch(
-            'lily_env.crypto.get_encryption_key'
+            'szczypiorek.crypto.get_encryption_key'
         ).side_effect = ['secret.0', 'secret.1']
 
         encrypted = encrypt('what is it')
@@ -109,7 +112,7 @@ class CryptTestCase(BaseTestCase):
     def test_get_encryption_key__all_good__success(self):
 
         key = 10 * 'd8s9s8c9s8s9ds8d98sd9s89cs8c9s8d'
-        self.root_dir.join('.lily_env_encryption_key').write(
+        self.root_dir.join('.szczypiorek_encryption_key').write(
             base64.b64encode(json.dumps({'key': key}).encode('utf8')),
             mode='wb')
 
@@ -117,7 +120,7 @@ class CryptTestCase(BaseTestCase):
 
     def test_get_encryption_key__not_base64__error(self):
 
-        self.root_dir.join('.lily_env_encryption_key').write(
+        self.root_dir.join('.szczypiorek_encryption_key').write(
             json.dumps({'key': 'key'}).encode('utf8'),
             mode='wb')
 
@@ -125,19 +128,19 @@ class CryptTestCase(BaseTestCase):
             get_encryption_key()
 
         assert e.value.args[0] == normalize("""
-            The content of the '.lily_env_encryption_key' file was automatically
+            The content of the '.szczypiorek_encryption_key' file was automatically
             encoded with base64 so that noone tries to mess around with it.
             So if you see this message that means that someone tried just that.
 
             Try to get access to the not broken version of the
-            '.lily_env_encryption_key' file or if you have access to the not
+            '.szczypiorek_encryption_key' file or if you have access to the not
             encrypted version you environment files simply remove the broken
             file and run 'decrypt' phase one more time.
         """)  # noqa
 
     def test_get_encryption_key__not_json__error(self):
 
-        self.root_dir.join('.lily_env_encryption_key').write(
+        self.root_dir.join('.szczypiorek_encryption_key').write(
             base64.b64encode(b'"key": "whatever"'),
             mode='wb')
 
@@ -145,18 +148,18 @@ class CryptTestCase(BaseTestCase):
             get_encryption_key()
 
         assert e.value.args[0] == normalize("""
-            The content of the '.lily_env_encryption_key' file must be a valid
+            The content of the '.szczypiorek_encryption_key' file must be a valid
             json file encoded with base64. It takes the following shape:
 
             {
                 "key": <autmatically generated secret>,
                 "created_datetime": <iso datetime of the key creation>
             }
-        """)
+        """)  # noqa
 
     def test_get_encryption_key__missing_json_fields__error(self):
 
-        self.root_dir.join('.lily_env_encryption_key').write(
+        self.root_dir.join('.szczypiorek_encryption_key').write(
             base64.b64encode(json.dumps({'not.key': 'what'}).encode('utf8')),
             mode='wb')
 
@@ -164,14 +167,14 @@ class CryptTestCase(BaseTestCase):
             get_encryption_key()
 
         assert e.value.args[0] == normalize("""
-            The content of the '.lily_env_encryption_key' file must be a valid
+            The content of the '.szczypiorek_encryption_key' file must be a valid
             json file encoded with base64. It takes the following shape:
 
             {
                 "key": <autmatically generated secret>,
                 "created_datetime": <iso datetime of the key creation>
             }
-        """)
+        """)  # noqa
 
     def test_get_encryption_key__file_does_not_exist__error(self):
 
@@ -179,27 +182,27 @@ class CryptTestCase(BaseTestCase):
             get_encryption_key()
 
         assert e.value.args[0] == normalize("""
-            Couldn't find the '.lily_env_encryption_key' file. It is required
+            Couldn't find the '.szczypiorek_encryption_key' file. It is required
             for the correct functioning of the encryption and decryption
             phases.
 
             If you see this message while performing 'decrypt' then
             simply request the file from fellow code contributor.
             In the 'encrypt' scenario the file is created automatically.
-        """)
+        """)  # noqa
 
     def test_get_encryption_key__file_not_gitignored__error(self):
 
         key = 'd8s9s8c9s8s9ds8d98sd9s89cs8c9s8d'
-        self.root_dir.join('.lily_env_encryption_key').write(
+        self.root_dir.join('.szczypiorek_encryption_key').write(
             base64.b64encode(json.dumps({'key': key}).encode('utf8')),
             mode='wb')
 
         self.mocker.patch(
-            'lily_env.crypto.assert_is_git_repository'
+            'szczypiorek.crypto.assert_is_git_repository'
         ).return_value = True
         self.mocker.patch(
-            'lily_env.crypto.assert_is_git_ignored'
+            'szczypiorek.crypto.assert_is_git_ignored'
         ).side_effect = FileNotIgnoredError('not ignored')
 
         with pytest.raises(FileNotIgnoredError) as e:
@@ -210,7 +213,7 @@ class CryptTestCase(BaseTestCase):
     def test_get_encryption_key__to_short__error(self):
 
         key = 'abc123'
-        self.root_dir.join('.lily_env_encryption_key').write(
+        self.root_dir.join('.szczypiorek_encryption_key').write(
             base64.b64encode(json.dumps({'key': key}).encode('utf8')),
             mode='wb')
 
@@ -219,13 +222,13 @@ class CryptTestCase(BaseTestCase):
 
         assert e.value.args[0] == normalize("""
             So it seems that the key used for encryption hidden in
-            the '.lily_env_encryption_key' file is too short.
+            the '.szczypiorek_encryption_key' file is too short.
 
             Which means that because of some reason you've decided to mess
             around with the built-in generator of the secured key.
 
             Try to get access to the not broken version of the
-            '.lily_env_encryption_key' file or if you have access to the not
+            '.szczypiorek_encryption_key' file or if you have access to the not
             encrypted version you environment files simply remove the broken
             file and run 'decrypt' phase one more time.
         """)
@@ -237,17 +240,17 @@ class CryptTestCase(BaseTestCase):
 
         key = 'd8s9s8c9s8s9ds8d98sd9s89cs8c9s8d'
         content = base64.b64encode(json.dumps({'key': key}).encode('utf8'))
-        self.root_dir.join('.lily_env_encryption_key').write(
+        self.root_dir.join('.szczypiorek_encryption_key').write(
             content, mode='wb')
 
         assert create_encryption_key_if_not_exist() is False
         assert self.root_dir.join(
-            '.lily_env_encryption_key').read('rb') == content
+            '.szczypiorek_encryption_key').read('rb') == content
 
     def test_create_encryption_key_if_not_exist__does_not_exist__success(self):
 
         assert create_encryption_key_if_not_exist() is True
-        content = self.root_dir.join('.lily_env_encryption_key').read('rb')
+        content = self.root_dir.join('.szczypiorek_encryption_key').read('rb')
         content = json.loads(base64.b64decode(content).decode('utf8'))
 
         assert len(content['key']) == 128

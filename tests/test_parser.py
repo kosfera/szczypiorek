@@ -1,12 +1,15 @@
 
+from unittest.mock import call
 import textwrap
+import os
 
 import pytest
+import click
 
-import lily_env as env
-from lily_env.parser import Env
-from lily_env.exceptions import ValidatorError
-from lily_env.crypto import encrypt
+import szczypiorek as env
+from szczypiorek.parser import Env
+from szczypiorek.exceptions import ValidatorError
+from szczypiorek.crypto import encrypt
 from tests import BaseTestCase
 
 
@@ -24,6 +27,15 @@ class EnvTestCase(BaseTestCase):
 
 
 class EnvParserTestCase(BaseTestCase):
+
+    def setUp(self):
+        super(EnvParserTestCase, self).setUp()
+        env.EnvParser._envs_cache = {}
+        try:
+            del os.environ['SZCZYPIOREK_PATH']
+
+        except KeyError:
+            pass
 
     def test_parse(self):
 
@@ -56,6 +68,145 @@ class EnvParserTestCase(BaseTestCase):
         assert e.is_important is True
         assert e.aws_url == 'http://hello.word.org'
         assert e.number_of_workers == 113
+
+    def test_parse__as_env(self):
+
+        class MyEnvParser(env.EnvParser):
+
+            secret_key = env.CharField(max_length=24, as_env=True)
+
+            is_important = env.BooleanField()
+
+            aws_url = env.URLField(as_env='AWS_URL_WHAT')
+
+            number_of_workers = env.IntegerField()
+
+        content = encrypt(textwrap.dedent('''
+            secret:
+              key: secret.whatever
+            is_important: true
+            aws:
+              url: http://hello.word.org
+
+            number:
+              of:
+                workers: '113'
+        '''))
+        self.root_dir.join('env.gpg').write(content, mode='w')
+
+        e = MyEnvParser().parse()
+
+        assert e.secret_key == 'secret.whatever'
+        assert e.is_important is True
+        assert e.aws_url == 'http://hello.word.org'
+        assert e.number_of_workers == 113
+        assert os.environ['SECRET_KEY'] == 'secret.whatever'
+        assert os.environ['AWS_URL_WHAT'] == 'http://hello.word.org'
+        del os.environ['SECRET_KEY']
+        del os.environ['AWS_URL_WHAT']
+
+    def test_parse__as_file(self):
+
+        class MyEnvParser(env.EnvParser):
+
+            secret_key = env.CharField(max_length=24, as_file='secret.yml')
+
+            is_important = env.BooleanField()
+
+            aws_url = env.URLField(as_file=True)
+
+            number_of_workers = env.IntegerField()
+
+        content = encrypt(textwrap.dedent('''
+            secret:
+              key: secret.whatever
+            is_important: true
+            aws:
+              url: http://hello.word.org
+
+            number:
+              of:
+                workers: '113'
+        '''))
+        self.root_dir.join('env.gpg').write(content, mode='w')
+
+        e = MyEnvParser().parse()
+
+        assert e.secret_key == 'secret.whatever'
+        assert e.is_important is True
+        assert e.aws_url == 'http://hello.word.org'
+        assert e.number_of_workers == 113
+        assert self.root_dir.join('secret.yml').read() == 'secret.whatever'
+        assert self.root_dir.join('aws_url').read() == 'http://hello.word.org'
+
+    def test_parse__singleton__same_gpg_file(self):
+
+        secho = self.mocker.patch.object(click, 'secho')
+
+        class MyEnvParser(env.EnvParser):
+
+            secret_key = env.CharField()
+
+            is_important = env.BooleanField()
+
+        content = encrypt(textwrap.dedent('''
+            secret:
+              key: secret.whatever
+            is_important: true
+        '''))
+        self.root_dir.join('env.gpg').write(content, mode='w')
+
+        for i in range(3):
+            e = MyEnvParser().parse()
+
+            assert e.secret_key == 'secret.whatever'
+            assert e.is_important is True
+
+        assert secho.call_count == 1
+
+    def test_parse__singleton__different_gpg_file(self):
+
+        secho = self.mocker.patch.object(click, 'secho')
+
+        class MyEnvParser(env.EnvParser):
+
+            secret_key = env.CharField()
+
+            is_important = env.BooleanField()
+
+        content = encrypt(textwrap.dedent('''
+            secret:
+              key: secret.whatever
+            is_important: true
+        '''))
+        self.root_dir.join('integration.gpg').write(content, mode='w')
+        content = encrypt(textwrap.dedent('''
+            secret:
+              key: secret.whatever
+            is_important: false
+        '''))
+        self.root_dir.join('production.gpg').write(content, mode='w')
+
+        cases = [
+            'integration.gpg',
+            'production.gpg',
+            'integration.gpg',
+            'integration.gpg',
+            'production.gpg',
+            'production.gpg',
+            'production.gpg',
+        ]
+
+        for gpg in cases:
+            os.environ['SZCZYPIOREK_PATH'] = str(self.root_dir.join(gpg))
+            MyEnvParser().parse()
+
+        int_path = str(self.root_dir.join('integration.gpg'))
+        prod_path = str(self.root_dir.join('production.gpg'))
+        assert secho.call_args_list == [
+            call(f'[LOADING] {int_path}', color='green'),
+            call(f'[LOADING] {prod_path}', color='green'),
+        ]
 
     def test_parse__complex_example(self):
 
