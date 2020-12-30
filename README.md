@@ -1,7 +1,9 @@
 
-# Lily-Env - environment management for humans
+![szczypiorek logo|50%](./assets/scallion_logo.png)
 
-**lily-env** allows one:
+# Szczypiorek - environment management for humans
+
+**szczypiorek** allows one:
 1. to define ones settings / credentials as a part of incredibly readable and flexible **yaml** format
 2. using as an extra **template variables** and **imports**
 3. and then define with minimal amount of code **environment parsers** which can be used to parse such yaml files
@@ -10,7 +12,7 @@
 
 ## Getting Started
 
-In order to start one needs those thing:
+In order to start one needs to perform below steps.
 
 ### Creating yaml env file
 
@@ -28,7 +30,7 @@ aws:
 Somewhere in your code create a parser (e.g. `env.py`):
 
 ```python
-import lily_env as ev
+import szczypiorek as ev
 
 
 class MyEnvParser(ev.EnvParser):
@@ -44,31 +46,33 @@ env = MyEnvParser().parse()
 
 ```
 
-Finally one must make sure that the yaml file will be protected therefore run in the terminal:
+### Protect data stored in yamls
+
+One must make sure that the yaml file will be protected therefore run in the terminal:
 ```bash
-lily-env encrypt ./deploy
+szczypiorek encrypt ./deploy
 ```
 
 Make sure to add to `.gitignore`
 ```
-.lily_env_encryption_key
+.szczypiorek_encryption_key
 deploy/development.yml
 ```
 
 ## FAQ
 
-### How lily-env behaves when deployed?
+### How szczypiorek behaves when deployed?
 
 When deployed for the parser to work correctly one needs two things:
 1. A single `env.gpg` file available in the root of the project
-2. A `.lily_env_encryption_key` storing the secret generated during the `encrypt` phase. WARNING! Make sure that this file is not kept in the repository itself but rather created dynamically during the deployment phase. Till that time it could be stored in for example `github secrets` or similar system such as `AWS secrets`, `Azure Key Vault` etc.
+2. A `.szczypiorek_encryption_key` storing the secret generated during the `encrypt` phase. WARNING! Make sure that this file is not kept in the repository itself but rather created dynamically during the deployment phase. Till that time it could be stored in for example `github secrets` or similar system such as `AWS secrets`, `Azure Key Vault` etc.
 
-### How lily-env behaves locally?
+### How szczypiorek behaves locally?
 
-For the `lily-env` to work locally one needs 3 things:
+For the `szczypiorek` to work locally one needs 3 things:
 1. One `gpg` file for example `development.gpg`
-2. A environment variable `LILY_ENV_PATH=development.gpg` pointing to that file's location
-3. A `.lily_env_encryption_key` file where a secret for decryption is stored.
+2. A environment variable `SZCZYPIOREK_PATH=development.gpg` pointing to that file's location
+3. A `.szczypiorek_encryption_key` file where a secret for decryption is stored.
 
 ### One contributor changed gpg files would after PUSH & PULL sequence see the changes?
 
@@ -82,7 +86,7 @@ TODO: add it
 
 FIXME: add it!!!
 ```bash
-lily_env print-env cosphere_api.conf.env.api_env
+szczypiorek print-env cosphere_api.conf.env.api_env
 ```
 
 ## The Environment Parser - Available fields
@@ -95,7 +99,7 @@ Use the below example as a inspiration regarding type of fields one can define.
 
 ```python
 
-import lily_env as env
+import szczypiorek as env
 
 
 class MyEnvParser(env.EnvParser):
@@ -134,23 +138,23 @@ TODO: add it
 
 ## TODOS
 
-There's still a lot of work to do, even though the basic functionality of **lily-env** is production ready:
+There's still a lot of work to do, even though the basic functionality of **szczypiorek** is production ready:
 
-- [ ] **[HIGH PRIO]** handle `as_env` and  `as_file` attributes of the fields
+- [X] **[HIGH PRIO]** handle `as_env` and  `as_file` attributes of the fields
 
-- [ ] **[HIGH PRIO]** replace the parsing mechanism with Pydentic models to make it more modern and more like python static typing.
+- [X] **[HIGH PRIO]** support template variables when used without breaking, e.g. when someone uses from the beginning '{{ a.b.c }}' pattern.
 
-- [ ] **[HIGH PRIO]** support template variables when used without breaking, e.g. when someone uses from the beginning '{{ a.b.c }}' pattern.
+- [X] **[HIGH PRIO]** think about different name for the project --> changed from `lily-env` to `szczypiorek`.
 
 - [ ] **[HIGH PRIO]** use https://github.com/squidfunk/mkdocs-material for docs
 
 - [ ] **[HIGH PRIO]** host the docs on github pages https://www.mkdocs.org/user-guide/deploying-your-docs/
 
-- [ ] **[HIGH PRIO]** think about different name for the project since `lily-env` suggests as if the project has something to do with `lily` which is not true. `lily-env` is a generic tool that can be used in any python project.
+- [ ] **[HIGH PRIO]** replace the parsing mechanism with Pydentic models to make it more modern and more like python static typing.
 
 - [ ] **[HIGH PRIO]** add an option to sync the secret of the admin
 
-- [ ] **[HIGH PRIO]** for `encrypt` add a file which stores information about which `key` encoded which file so that one could in theory use strong key to encode one set of files and then use another one which can be shared to encode for example `development.yml`. The current idea is to introduce the 3rd field in the `.lily_env_encryption_key` file which then can be stored in the history.
+- [ ] **[HIGH PRIO]** for `encrypt` add a file which stores information about which `key` encoded which file so that one could in theory use strong key to encode one set of files and then use another one which can be shared to encode for example `development.yml`. The current idea is to introduce the 3rd field in the `.szczypiorek_encryption_key` file which then can be stored in the history.
 
 - [ ] **[LOW PRIO]** Enable imports in the yml files. It should take the following form:
 ```yaml
@@ -196,7 +200,7 @@ When running `decrypt` it "unpacks" all files with warnings that existing ones w
 - [ ] **[LOW PRIO]** support **AWS_POLLY_RENDER_SAMPLE validator**:
 * it renders simple text
 
-- [ ] **[LOW PRIO]** handle ROTATION of the **lily_env** secret itself. One can with one command run:
+- [ ] **[LOW PRIO]** handle ROTATION of the **szczypiorek** secret itself. One can with one command run:
 * `decrypt`
 * render new key
 * `encrypt`

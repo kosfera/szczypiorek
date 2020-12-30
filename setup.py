@@ -27,12 +27,11 @@ with open(os.path.join(BASE_DIR, 'requirements.txt')) as f:
 
 
 setup(
-    name='lily-env',
+    name='szczypiorek',
     description=(
-        'Lily extension for managing environment variables, '
-        'their validity etc.'),
-    version='1.0.0',
-    url='https://github.com/cosphere-org/lily-env',
+        'Szczypiorek environment management for humans.'),
+    version='1.0.1',
+    url='https://github.com/cosphere-org/szczypiorek',
     author='CoSphere Tech',
     author_email='contact@cosphere.org',
     packages=find_packages(),
@@ -46,8 +45,8 @@ setup(
     include_package_data=True,
     entry_points='''
         [console_scripts]
-        lily_env=lily_env.cli:cli
+        szczypiorek=szczypiorek.cli:cli
     ''',
     install_requires=requirements,
-    keywords=['lily', 'django', 'drf'],
+    keywords=['szczypiorek', 'environment', 'secrets'],
     classifiers=[])

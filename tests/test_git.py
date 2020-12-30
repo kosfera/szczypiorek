@@ -2,8 +2,8 @@
 from bash import bash
 import pytest
 
-from lily_env.git import assert_is_git_ignored, assert_is_git_repository
-from lily_env.exceptions import FileNotIgnoredError, normalize
+from szczypiorek.git import assert_is_git_ignored, assert_is_git_repository
+from szczypiorek.exceptions import FileNotIgnoredError, normalize
 from tests import BaseTestCase
 
 
