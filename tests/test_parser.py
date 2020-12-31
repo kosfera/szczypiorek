@@ -31,6 +31,7 @@ class EnvParserTestCase(BaseTestCase):
     def setUp(self):
         super(EnvParserTestCase, self).setUp()
         env.EnvParser._envs_cache = {}
+        env.EnvParser._envs_gpg_cache = {}
         try:
             del os.environ['SZCZYPIOREK_PATH']
 
@@ -162,7 +163,12 @@ class EnvParserTestCase(BaseTestCase):
             assert e.secret_key == 'secret.whatever'
             assert e.is_important is True
 
-        assert secho.call_count == 1
+        assert secho.call_args_list == [
+            call('[LOADING] env.gpg', color='green'),
+            call(
+                '[PARSING] tests.test_parser.MyEnvParser(env.gpg)',
+                color='green'),
+        ]
 
     def test_parse__singleton__different_gpg_file(self):
 
@@ -205,7 +211,59 @@ class EnvParserTestCase(BaseTestCase):
         prod_path = str(self.root_dir.join('production.gpg'))
         assert secho.call_args_list == [
             call(f'[LOADING] {int_path}', color='green'),
+            call(
+                f'[PARSING] tests.test_parser.MyEnvParser({int_path})',
+                color='green'),
             call(f'[LOADING] {prod_path}', color='green'),
+            call(
+                f'[PARSING] tests.test_parser.MyEnvParser({prod_path})',
+                color='green'),
+        ]
+
+    def test_parse__singleton__same_gpg_file_different_parsers(self):
+
+        secho = self.mocker.patch.object(click, 'secho')
+
+        class MyEnvParser0(env.EnvParser):
+
+            secret_key = env.CharField()
+
+            is_important = env.BooleanField()
+
+        class MyEnvParser1(env.EnvParser):
+
+            secret_key = env.CharField()
+
+            is_important = env.BooleanField()
+
+        class MyEnvParser2(env.EnvParser):
+
+            secret_key = env.CharField()
+
+            is_important = env.BooleanField()
+
+        content = encrypt(textwrap.dedent('''
+            secret:
+              key: secret.whatever
+            is_important: true
+        '''))
+        self.root_dir.join('env.gpg').write(content, mode='w')
+
+        MyEnvParser0().parse()
+        MyEnvParser1().parse()
+        MyEnvParser2().parse()
+
+        assert secho.call_args_list == [
+            call('[LOADING] env.gpg', color='green'),
+            call(
+                '[PARSING] tests.test_parser.MyEnvParser0(env.gpg)',
+                color='green'),
+            call(
+                '[PARSING] tests.test_parser.MyEnvParser1(env.gpg)',
+                color='green'),
+            call(
+                '[PARSING] tests.test_parser.MyEnvParser2(env.gpg)',
+                color='green'),
         ]
 
     def test_parse__complex_example(self):

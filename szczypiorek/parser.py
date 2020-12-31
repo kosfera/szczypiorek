@@ -21,6 +21,8 @@ class EnvParser:
 
     _envs_cache = {}
 
+    _envs_gpg_cache = {}
+
     @property
     def fields(self):
         fields = {}
@@ -36,26 +38,32 @@ class EnvParser:
         env_path = os.environ.get('SZCZYPIOREK_PATH', 'env.gpg')
         env_key = (
             f'{self.__class__.__module__}.'
-            f'{self.__class__.__name__}.'
-            f'{env_path}')
+            f'{self.__class__.__name__}'
+            f'({env_path})')
 
         _env = EnvParser._envs_cache.get(env_key)
 
         if not _env:
-            click.secho(f'[LOADING] {env_path}', color='green')
-            with open(env_path, 'r') as f:
-                env = decrypt(f.read())
-                env = load_yaml(env)
-                env = flatten(env)
-                env = substitute(env)
+            env_from_gpg = EnvParser._envs_gpg_cache.get(env_path)
 
+            if not env_from_gpg:
+                click.secho(f'[LOADING] {env_path}', color='green')
+                with open(env_path, 'r') as f:
+                    env_from_gpg = decrypt(f.read())
+                    env_from_gpg = load_yaml(env_from_gpg)
+                    env_from_gpg = flatten(env_from_gpg)
+                    env_from_gpg = substitute(env_from_gpg)
+
+                    EnvParser._envs_gpg_cache[env_path] = env_from_gpg
+
+            click.secho(f'[PARSING] {env_key}', color='green')
             env_variables = {}
             for field_name, field in self.fields.items():
                 if field.required:
-                    raw_value = env[field_name]
+                    raw_value = env_from_gpg[field_name]
 
                 else:
-                    raw_value = env.get(field_name, field.default)
+                    raw_value = env_from_gpg.get(field_name, field.default)
 
                 env_variables[field_name] = (
                     field.to_python(field_name, raw_value))
