@@ -18,6 +18,7 @@ from .exceptions import (
 )
 from .constants import (
     ENCRYPTION_KEY_FILE,
+    ENCRYPTION_KEY_ENV,
     ENCRYPTION_KEY_LENGTH,
 )
 
@@ -57,14 +58,19 @@ def decrypt(content):
 def get_encryption_key():
 
     try:
-        with open(ENCRYPTION_KEY_FILE, 'rb') as f:
-            content = f.read()
-            content = base64.b64decode(content).decode('utf8')
-            encryption_key = json.loads(content)['key']
+        encryption_key = os.environ.get(ENCRYPTION_KEY_ENV)
+        encryption_key_source = f"'{ENCRYPTION_KEY_ENV}' environment variable"
+        if not encryption_key:
+            encryption_key_source = f"'{ENCRYPTION_KEY_FILE}' file"
+            with open(ENCRYPTION_KEY_FILE, 'rb') as f:
+                encryption_key = f.read()
+
+        encryption_key = base64.b64decode(encryption_key).decode('utf8')
+        encryption_key = json.loads(encryption_key)['key']
 
     except FileNotFoundError:
         raise EncryptionKeyFileMissingError(f"""
-            Couldn't find the '{ENCRYPTION_KEY_FILE}' file. It is required
+            Couldn't find the {encryption_key_source}. It is required
             for the correct functioning of the encryption and decryption
             phases.
 
@@ -75,19 +81,19 @@ def get_encryption_key():
 
     except base64.binascii.Error:
         raise EncryptionKeyBrokenBase64Error(f"""
-            The content of the '{ENCRYPTION_KEY_FILE}' file was automatically
+            The content of the {encryption_key_source} was automatically
             encoded with base64 so that noone tries to mess around with it.
             So if you see this message that means that someone tried just that.
 
             Try to get access to the not broken version of the
-            '{ENCRYPTION_KEY_FILE}' file or if you have access to the not
+            {encryption_key_source} or if you have access to the not
             encrypted version you environment files simply remove the broken
             file and run 'decrypt' phase one more time.
         """)
 
     except (KeyError, json.decoder.JSONDecodeError):
         raise EncryptionKeyBrokenJsonError(f"""
-            The content of the '{ENCRYPTION_KEY_FILE}' file must be a valid
+            The content of the {encryption_key_source} must be a valid
             json file encoded with base64. It takes the following shape:
 
             {{
@@ -102,13 +108,13 @@ def get_encryption_key():
     if len(encryption_key) < ENCRYPTION_KEY_LENGTH:
         raise EncryptionKeyTooShortError(f"""
             So it seems that the key used for encryption hidden in
-            the '{ENCRYPTION_KEY_FILE}' file is too short.
+            the {encryption_key_source} is too short.
 
             Which means that because of some reason you've decided to mess
             around with the built-in generator of the secured key.
 
             Try to get access to the not broken version of the
-            '{ENCRYPTION_KEY_FILE}' file or if you have access to the not
+            {encryption_key_source} or if you have access to the not
             encrypted version you environment files simply remove the broken
             file and run 'decrypt' phase one more time.
         """)
