@@ -1,6 +1,7 @@
 
 import json
 import base64
+import os
 
 import pytest
 
@@ -22,7 +23,15 @@ from szczypiorek.exceptions import (
 from tests import BaseTestCase
 
 
-class CryptTestCase(BaseTestCase):
+class CryptoTestCase(BaseTestCase):
+
+    def setUp(self):
+        super(CryptoTestCase, self).setUp()
+        try:
+            del os.environ['SZCZYPIOREK_ENCRYPTION_KEY']
+
+        except KeyError:
+            pass
 
     #
     # ENCRYPT
@@ -118,7 +127,40 @@ class CryptTestCase(BaseTestCase):
 
         assert get_encryption_key() == key
 
-    def test_get_encryption_key__not_base64__error(self):
+    def test_get_encryption_key__file_does_not_exist__error(self):
+
+        with pytest.raises(EncryptionKeyFileMissingError) as e:
+            get_encryption_key()
+
+        assert e.value.args[0] == normalize("""
+            Couldn't find the '.szczypiorek_encryption_key' file. It is required
+            for the correct functioning of the encryption and decryption
+            phases.
+
+            If you see this message while performing 'decrypt' then
+            simply request the file from fellow code contributor.
+            In the 'encrypt' scenario the file is created automatically.
+        """)  # noqa
+
+    def test_get_encryption_key__env_var__not_base64__error(self):
+
+        os.environ['SZCZYPIOREK_ENCRYPTION_KEY'] = json.dumps({'key': 'key'})
+
+        with pytest.raises(EncryptionKeyBrokenBase64Error) as e:
+            get_encryption_key()
+
+        assert e.value.args[0] == normalize("""
+            The content of the 'SZCZYPIOREK_ENCRYPTION_KEY' environment variable was automatically
+            encoded with base64 so that noone tries to mess around with it.
+            So if you see this message that means that someone tried just that.
+
+            Try to get access to the not broken version of the
+            'SZCZYPIOREK_ENCRYPTION_KEY' environment variable or if you have access to the not
+            encrypted version you environment files simply remove the broken
+            file and run 'decrypt' phase one more time.
+        """)  # noqa
+
+    def test_get_encryption_key__file__not_base64__error(self):
 
         self.root_dir.join('.szczypiorek_encryption_key').write(
             json.dumps({'key': 'key'}).encode('utf8'),
@@ -174,21 +216,6 @@ class CryptTestCase(BaseTestCase):
                 "key": <autmatically generated secret>,
                 "created_datetime": <iso datetime of the key creation>
             }
-        """)  # noqa
-
-    def test_get_encryption_key__file_does_not_exist__error(self):
-
-        with pytest.raises(EncryptionKeyFileMissingError) as e:
-            get_encryption_key()
-
-        assert e.value.args[0] == normalize("""
-            Couldn't find the '.szczypiorek_encryption_key' file. It is required
-            for the correct functioning of the encryption and decryption
-            phases.
-
-            If you see this message while performing 'decrypt' then
-            simply request the file from fellow code contributor.
-            In the 'encrypt' scenario the file is created automatically.
         """)  # noqa
 
     def test_get_encryption_key__file_not_gitignored__error(self):
