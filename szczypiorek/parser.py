@@ -6,6 +6,7 @@ import click
 from .fields import BaseField
 from .crypto import decrypt
 from .utils import load_yaml, flatten, substitute
+from .constants import ENVIRONMENT_GPG, ENVIRONMENT_GPG_FILE
 
 
 class Env:
@@ -18,8 +19,6 @@ class Env:
 
 
 class EnvParser:
-
-    _envs_cache = {}
 
     _envs_gpg_cache = {}
 
@@ -35,58 +34,68 @@ class EnvParser:
         return fields
 
     def parse(self):
-        env_path = os.environ.get('SZCZYPIOREK_PATH', 'env.gpg')
+
+        env_key, env_from_gpg = self.get_env_from_gpg()
+
+        click.secho(f'[PARSING] {env_key}', color='green')
+        env_variables = {}
+        for field_name, field in self.fields.items():
+            if field.required:
+                raw_value = env_from_gpg[field_name]
+
+            else:
+                raw_value = env_from_gpg.get(field_name, field.default)
+
+            env_variables[field_name] = (
+                field.to_python(field_name, raw_value))
+
+            if field.as_env:
+                if isinstance(field.as_env, str):
+                    env_name = field.as_env
+
+                else:
+                    env_name = field_name.upper()
+
+                os.environ[env_name] = env_variables[field_name]
+
+            if field.as_file:
+                if isinstance(field.as_file, str):
+                    file_name = field.as_file
+
+                else:
+                    file_name = field_name
+
+                with open(file_name, 'w') as f:
+                    f.write(env_variables[field_name])
+
+        return Env(**env_variables)
+
+    def get_env_from_gpg(self):
+
+        env_from_gpg = os.environ.get(ENVIRONMENT_GPG)
         env_key = (
             f'{self.__class__.__module__}.'
             f'{self.__class__.__name__}'
-            f'({env_path})')
+            f'(environ.{ENVIRONMENT_GPG})')
 
-        _env = EnvParser._envs_cache.get(env_key)
+        if not env_from_gpg:
+            env_path = os.environ.get(ENVIRONMENT_GPG_FILE, 'env.gpg')
+            env_key = (
+                f'{self.__class__.__module__}.'
+                f'{self.__class__.__name__}'
+                f'({env_path})')
 
-        if not _env:
             env_from_gpg = EnvParser._envs_gpg_cache.get(env_path)
-
             if not env_from_gpg:
                 click.secho(f'[LOADING] {env_path}', color='green')
                 with open(env_path, 'r') as f:
-                    env_from_gpg = decrypt(f.read())
-                    env_from_gpg = load_yaml(env_from_gpg)
-                    env_from_gpg = flatten(env_from_gpg)
-                    env_from_gpg = substitute(env_from_gpg)
+                    env_from_gpg = f.read()
 
-                    EnvParser._envs_gpg_cache[env_path] = env_from_gpg
+                EnvParser._envs_gpg_cache[env_path] = env_from_gpg
 
-            click.secho(f'[PARSING] {env_key}', color='green')
-            env_variables = {}
-            for field_name, field in self.fields.items():
-                if field.required:
-                    raw_value = env_from_gpg[field_name]
+        env_from_gpg = decrypt(env_from_gpg)
+        env_from_gpg = load_yaml(env_from_gpg)
+        env_from_gpg = flatten(env_from_gpg)
+        env_from_gpg = substitute(env_from_gpg)
 
-                else:
-                    raw_value = env_from_gpg.get(field_name, field.default)
-
-                env_variables[field_name] = (
-                    field.to_python(field_name, raw_value))
-
-                if field.as_env:
-                    if isinstance(field.as_env, str):
-                        env_name = field.as_env
-
-                    else:
-                        env_name = field_name.upper()
-
-                    os.environ[env_name] = env_variables[field_name]
-
-                if field.as_file:
-                    if isinstance(field.as_file, str):
-                        file_name = field.as_file
-
-                    else:
-                        file_name = field_name
-
-                    with open(file_name, 'w') as f:
-                        f.write(env_variables[field_name])
-
-            EnvParser._envs_cache[env_key] = Env(**env_variables)
-
-        return EnvParser._envs_cache[env_key]
+        return env_key, env_from_gpg

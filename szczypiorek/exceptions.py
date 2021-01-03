@@ -27,7 +27,7 @@ class MissingSubstitutionKeyError(BaseException):
 #
 # VALIDATORS
 #
-class ValidatorError(Exception):
+class ValidatorError(BaseException):
     pass
 
 

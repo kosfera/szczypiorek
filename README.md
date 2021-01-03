@@ -70,7 +70,7 @@ When deployed for the parser to work correctly one needs two things:
 
 For the `szczypiorek` to work locally one needs 3 things:
 1. One `gpg` file for example `development.gpg`
-2. A environment variable `SZCZYPIOREK_PATH=development.gpg` pointing to that file's location
+2. A environment variable `SZCZYPIOREK_ENVIRONMENT_GPG_FILE=development.gpg` pointing to that file's location
 3. A `.szczypiorek_encryption_key` file where a secret for decryption is stored.
 
 ### One contributor changed gpg files would after PUSH & PULL sequence see the changes?

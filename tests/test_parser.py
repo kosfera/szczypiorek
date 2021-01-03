@@ -33,7 +33,13 @@ class EnvParserTestCase(BaseTestCase):
         env.EnvParser._envs_cache = {}
         env.EnvParser._envs_gpg_cache = {}
         try:
-            del os.environ['SZCZYPIOREK_PATH']
+            del os.environ['SZCZYPIOREK_ENVIRONMENT_GPG_FILE']
+
+        except KeyError:
+            pass
+
+        try:
+            del os.environ['SZCZYPIOREK_ENVIRONMENT_GPG']
 
         except KeyError:
             pass
@@ -157,7 +163,7 @@ class EnvParserTestCase(BaseTestCase):
         '''))
         self.root_dir.join('env.gpg').write(content, mode='w')
 
-        for i in range(3):
+        for i in range(2):
             e = MyEnvParser().parse()
 
             assert e.secret_key == 'secret.whatever'
@@ -168,55 +174,8 @@ class EnvParserTestCase(BaseTestCase):
             call(
                 '[PARSING] tests.test_parser.MyEnvParser(env.gpg)',
                 color='green'),
-        ]
-
-    def test_parse__singleton__different_gpg_file(self):
-
-        secho = self.mocker.patch.object(click, 'secho')
-
-        class MyEnvParser(env.EnvParser):
-
-            secret_key = env.CharField()
-
-            is_important = env.BooleanField()
-
-        content = encrypt(textwrap.dedent('''
-            secret:
-              key: secret.whatever
-            is_important: true
-        '''))
-        self.root_dir.join('integration.gpg').write(content, mode='w')
-        content = encrypt(textwrap.dedent('''
-            secret:
-              key: secret.whatever
-            is_important: false
-        '''))
-        self.root_dir.join('production.gpg').write(content, mode='w')
-
-        cases = [
-            'integration.gpg',
-            'production.gpg',
-            'integration.gpg',
-            'integration.gpg',
-            'production.gpg',
-            'production.gpg',
-            'production.gpg',
-        ]
-
-        for gpg in cases:
-            os.environ['SZCZYPIOREK_PATH'] = str(self.root_dir.join(gpg))
-            MyEnvParser().parse()
-
-        int_path = str(self.root_dir.join('integration.gpg'))
-        prod_path = str(self.root_dir.join('production.gpg'))
-        assert secho.call_args_list == [
-            call(f'[LOADING] {int_path}', color='green'),
             call(
-                f'[PARSING] tests.test_parser.MyEnvParser({int_path})',
-                color='green'),
-            call(f'[LOADING] {prod_path}', color='green'),
-            call(
-                f'[PARSING] tests.test_parser.MyEnvParser({prod_path})',
+                '[PARSING] tests.test_parser.MyEnvParser(env.gpg)',
                 color='green'),
         ]
 
@@ -293,6 +252,41 @@ class EnvParserTestCase(BaseTestCase):
                 c: http://hello.word.org
         '''))
         self.root_dir.join('env.gpg').write(content, mode='w')
+
+        e = MyEnvParser().parse()
+
+        assert e.secret_key == 'secret.whatever'
+        assert e.is_important is True
+        assert e.aws_url == 'http://hello.word.org'
+        assert e.number_of_workers == 113
+
+    def test_parse__complex_example__from_env_variable(self):
+
+        class MyEnvParser(env.EnvParser):
+
+            secret_key = env.CharField()
+
+            is_important = env.BooleanField()
+
+            aws_url = env.URLField()
+
+            number_of_workers = env.IntegerField()
+
+        content = encrypt(textwrap.dedent('''
+            secret:
+              key: secret.whatever
+            is_important: true
+            aws:
+              url: {{ a.b.c }}
+
+            number:
+              of:
+                workers: '113'
+            a:
+              b:
+                c: http://hello.word.org
+        '''))
+        os.environ['SZCZYPIOREK_ENVIRONMENT_GPG'] = content
 
         e = MyEnvParser().parse()
 
