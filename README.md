@@ -145,6 +145,8 @@ There's still a lot of work to do, even though the basic functionality of **szcz
 
 - [X] **[HIGH PRIO]** think about different name for the project --> changed from `lily-env` to `szczypiorek`.
 
+- [ ] **[HIGH PRIO]** enable versioning of secrets and a command which is able to clean up all unused secrets
+
 - [ ] **[HIGH PRIO]** use https://github.com/squidfunk/mkdocs-material for docs
 
 - [ ] **[HIGH PRIO]** host the docs on github pages https://www.mkdocs.org/user-guide/deploying-your-docs/

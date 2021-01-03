@@ -63,7 +63,7 @@ def get_encryption_key(key_filepath=None):
         # -- only attempt reading from ENV if key not explicitly set
         if not key_filepath:
             encryption_key = os.environ.get(ENCRYPTION_KEY_ENV)
-            encryption_key_source = f"'{ENCRYPTION_KEY_ENV}' environment variable"
+            encryption_key_source = f"'{ENCRYPTION_KEY_ENV}' environment variable"  # noqa
 
         if not encryption_key:
             # -- if key file path not given take default one
