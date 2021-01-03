@@ -49,19 +49,22 @@ def encrypt(path, key_filepath=None):
         with open(filepath, 'r') as f:
             gpg_filepath = re.sub(r'(\.yml|\.yaml)', '.gpg', filepath)
 
+            click.secho(f'[ENCRYPTING] {filepath}', color='green')
+
+            try:
+                assert_is_git_ignored(filepath)
+
+                content = f.read()
+                # -- used here only to validate
+                load_yaml(content)
+                content = crypto.encrypt(content, key_filepath)
+
+            except BaseException as e:
+                raise click.ClickException(e.args[0])
+
+            # -- WRITE at the end when it's certain that all went well
             with open(gpg_filepath, 'w') as g:
-                click.secho(f'[ENCRYPTING] {filepath}', color='green')
-
-                try:
-                    assert_is_git_ignored(filepath)
-
-                    content = f.read()
-                    # -- used here only to validate
-                    load_yaml(content)
-                    g.write(crypto.encrypt(content, key_filepath))
-
-                except BaseException as e:
-                    raise click.ClickException(e.args[0])
+                g.write(content)
 
 
 @click.command()
@@ -77,14 +80,17 @@ def decrypt(path, key_filepath=None):
     for filepath in filepaths:
         with open(filepath, 'r') as f:
             yml_filepath = filepath.replace('.gpg', '.yml')
+            click.secho(f'[DECRYPTING] {filepath}', color='green')
+
+            try:
+                content = crypto.decrypt(f.read(), key_filepath)
+
+            except BaseException as e:
+                raise click.ClickException(e.args[0])
+
+            # -- WRITE at the end when it's certain that all went well
             with open(yml_filepath, 'w') as g:
-                click.secho(f'[DECRYPTING] {filepath}', color='green')
-
-                try:
-                    g.write(crypto.decrypt(f.read(), key_filepath))
-
-                except BaseException as e:
-                    raise click.ClickException(e.args[0])
+                g.write(content)
 
 
 cli.add_command(encrypt)

@@ -153,6 +153,22 @@ class CliTestCase(BaseTestCase):
         assert result.exit_code == 1
         assert 'Error: Well it seems that the' in result.output.strip()
 
+    def test_encrypt__some_error__do_not_overwrite_existing(self):
+
+        self.root_dir.join('a.gpg').write('hello gpg')
+
+        self.root_dir.join('a.yml').write(textwrap.dedent('''
+            a:
+             b: true
+             c: 12
+        ''').strip())
+
+        result = self.runner.invoke(cli, ['encrypt', str(self.root_dir)])
+
+        assert result.exit_code == 1
+        assert 'Error: Well it seems that the' in result.output.strip()
+        assert self.root_dir.join('a.gpg').read() == 'hello gpg'
+
     #
     # DECRYPT
     #
@@ -263,3 +279,16 @@ class CliTestCase(BaseTestCase):
         assert (
             "Couldn't find the '.szczypiorek_encryption_key' file" in
             result.output.strip())
+
+    def test_decrypt__some_error__do_not_overwrite_existing(self):
+
+        self.root_dir.join('a.gpg').write('whatever')
+        self.root_dir.join('a.yml').write('hello yml')
+
+        result = self.runner.invoke(cli, ['decrypt', str(self.root_dir)])
+
+        assert result.exit_code == 1
+        assert (
+            "Couldn't find the '.szczypiorek_encryption_key' file" in
+            result.output.strip())
+        assert self.root_dir.join('a.yml').read() == 'hello yml'
