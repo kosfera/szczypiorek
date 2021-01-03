@@ -70,7 +70,7 @@ When deployed for the parser to work correctly one needs two things:
 
 For the `szczypiorek` to work locally one needs 3 things:
 1. One `gpg` file for example `development.gpg`
-2. A environment variable `SZCZYPIOREK_PATH=development.gpg` pointing to that file's location
+2. A environment variable `SZCZYPIOREK_ENVIRONMENT_GPG_FILE=development.gpg` pointing to that file's location
 3. A `.szczypiorek_encryption_key` file where a secret for decryption is stored.
 
 ### One contributor changed gpg files would after PUSH & PULL sequence see the changes?
@@ -144,6 +144,8 @@ There's still a lot of work to do, even though the basic functionality of **szcz
 - [X] **[HIGH PRIO]** support template variables when used without breaking, e.g. when someone uses from the beginning '{{ a.b.c }}' pattern.
 
 - [X] **[HIGH PRIO]** think about different name for the project --> changed from `lily-env` to `szczypiorek`.
+
+- [ ] **[HIGH PRIO]** enable versioning of secrets and a command which is able to clean up all unused secrets
 
 - [ ] **[HIGH PRIO]** use https://github.com/squidfunk/mkdocs-material for docs
 

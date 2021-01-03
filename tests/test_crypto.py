@@ -127,6 +127,15 @@ class CryptoTestCase(BaseTestCase):
 
         assert get_encryption_key() == key
 
+    def test_get_encryption_key__custom_file__success(self):
+
+        key = 10 * 'd8s9s8c9s8s9ds8d98sd9s89cs8c9s8d'
+        self.root_dir.join('.development_encryption_key').write(
+            base64.b64encode(json.dumps({'key': key}).encode('utf8')),
+            mode='wb')
+
+        assert get_encryption_key('.development_encryption_key') == key
+
     def test_get_encryption_key__file_does_not_exist__error(self):
 
         with pytest.raises(EncryptionKeyFileMissingError) as e:

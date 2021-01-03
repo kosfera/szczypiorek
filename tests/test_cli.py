@@ -55,6 +55,31 @@ class CliTestCase(BaseTestCase):
         assert result.exit_code == 0
         assert result.output.strip() == ''
 
+    def test_encrypt__specific_file(self):
+
+        self.root_dir.join('a.yml').write(textwrap.dedent('''
+            a:
+             b: true
+             c: 12
+        ''').strip())
+        bash('git init')
+        self.root_dir.join('.gitignore').write(
+            '.szczypiorek_encryption_key\n'
+            'a.yml\n'
+        )
+
+        result = self.runner.invoke(
+            cli, ['encrypt', str(self.root_dir.join('a.yml'))])
+
+        assert result.exit_code == 0
+        assert sorted(self.root_dir.listdir()) == [
+            str(self.root_dir.join('.git')),
+            str(self.root_dir.join('.gitignore')),
+            str(self.root_dir.join('.szczypiorek_encryption_key')),
+            str(self.root_dir.join('a.gpg')),
+            str(self.root_dir.join('a.yml')),
+        ]
+
     def test_encrypt__some_yaml_files(self):
 
         self.root_dir.join('a.yml').write(textwrap.dedent('''
@@ -85,6 +110,36 @@ class CliTestCase(BaseTestCase):
             str(self.root_dir.join('b.yml')),
         ]
 
+    def test_encrypt__specific_file_and_custom_key_file(self):
+
+        self.root_dir.join('a.yml').write(textwrap.dedent('''
+            a:
+             b: true
+             c: 12
+        ''').strip())
+        bash('git init')
+        self.root_dir.join('.gitignore').write(
+            '.development_encryption_key\n'
+            'a.yml\n'
+        )
+
+        result = self.runner.invoke(
+            cli,
+            [
+                'encrypt',
+                '-k', '.development_encryption_key',
+                str(self.root_dir.join('a.yml'))
+            ])
+
+        assert result.exit_code == 0
+        assert sorted(self.root_dir.listdir()) == [
+            str(self.root_dir.join('.development_encryption_key')),
+            str(self.root_dir.join('.git')),
+            str(self.root_dir.join('.gitignore')),
+            str(self.root_dir.join('a.gpg')),
+            str(self.root_dir.join('a.yml')),
+        ]
+
     def test_encrypt__some_error(self):
 
         self.root_dir.join('a.yml').write(textwrap.dedent('''
@@ -107,6 +162,35 @@ class CliTestCase(BaseTestCase):
 
         assert result.exit_code == 0
         assert result.output.strip() == ''
+
+    def test_decrypt__specific_gpg_file(self):
+
+        content = encrypt(textwrap.dedent('''
+            secret:
+              key: secret.whatever
+            is_important: true
+            aws:
+              url: {{ a.b.c }}
+
+            number:
+              of:
+                workers: '113'
+            a:
+              b:
+                c: http://hello.word.org
+        '''))
+        self.root_dir.join('e2e.gpg').write(content, mode='w')
+
+        result = self.runner.invoke(
+            cli,
+            ['decrypt', str(self.root_dir.join('e2e.gpg'))])
+
+        assert result.exit_code == 0
+        assert sorted(self.root_dir.listdir()) == [
+            str(self.root_dir.join('.szczypiorek_encryption_key')),
+            str(self.root_dir.join('e2e.gpg')),
+            str(self.root_dir.join('e2e.yml')),
+        ]
 
     def test_decrypt__some_gpg_files(self):
 
@@ -132,6 +216,41 @@ class CliTestCase(BaseTestCase):
             str(self.root_dir.join('.szczypiorek_encryption_key')),
             str(self.root_dir.join('env.gpg')),
             str(self.root_dir.join('env.yml')),
+        ]
+
+    def test_decrypt__specific_file_and_custom_key_file(self):
+
+        content = encrypt(
+            textwrap.dedent('''
+                secret:
+                  key: secret.whatever
+                is_important: true
+                aws:
+                  url: {{ a.b.c }}
+
+                number:
+                  of:
+                    workers: '113'
+                a:
+                  b:
+                    c: http://hello.word.org
+            '''),
+            '.e2e_encryption_key')
+        self.root_dir.join('e2e.gpg').write(content, mode='w')
+
+        result = self.runner.invoke(
+            cli,
+            [
+                'decrypt',
+                '-k', '.e2e_encryption_key',
+                str(self.root_dir.join('e2e.gpg'))
+            ])
+
+        assert result.exit_code == 0
+        assert sorted(self.root_dir.listdir()) == [
+            str(self.root_dir.join('.e2e_encryption_key')),
+            str(self.root_dir.join('e2e.gpg')),
+            str(self.root_dir.join('e2e.yml')),
         ]
 
     def test_decrypt__some_error(self):

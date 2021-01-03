@@ -23,24 +23,24 @@ from .constants import (
 )
 
 
-def encrypt(content):
+def encrypt(content, key_filepath=None):
     gpg = gnupg.GPG()
 
-    create_encryption_key_if_not_exist()
+    create_encryption_key_if_not_exist(key_filepath)
     return str(
         gpg.encrypt(
             content,
             symmetric='AES256',
-            passphrase=get_encryption_key(),
+            passphrase=get_encryption_key(key_filepath),
             recipients=None))
 
 
-def decrypt(content):
+def decrypt(content, key_filepath=None):
     gpg = gnupg.GPG()
 
     decrypted = gpg.decrypt(
         content,
-        passphrase=get_encryption_key())
+        passphrase=get_encryption_key(key_filepath))
 
     if decrypted.ok:
         return str(decrypted)
@@ -55,14 +55,23 @@ def decrypt(content):
         """)
 
 
-def get_encryption_key():
+def get_encryption_key(key_filepath=None):
 
     try:
-        encryption_key = os.environ.get(ENCRYPTION_KEY_ENV)
-        encryption_key_source = f"'{ENCRYPTION_KEY_ENV}' environment variable"
+        encryption_key = None
+
+        # -- only attempt reading from ENV if key not explicitly set
+        if not key_filepath:
+            encryption_key = os.environ.get(ENCRYPTION_KEY_ENV)
+            encryption_key_source = f"'{ENCRYPTION_KEY_ENV}' environment variable"  # noqa
+
         if not encryption_key:
-            encryption_key_source = f"'{ENCRYPTION_KEY_FILE}' file"
-            with open(ENCRYPTION_KEY_FILE, 'rb') as f:
+            # -- if key file path not given take default one
+            if not key_filepath:
+                key_filepath = ENCRYPTION_KEY_FILE
+
+            encryption_key_source = f"'{key_filepath}' file"
+            with open(key_filepath, 'rb') as f:
                 encryption_key = f.read()
 
         encryption_key = base64.b64decode(encryption_key).decode('utf8')
@@ -103,7 +112,7 @@ def get_encryption_key():
         """)
 
     if assert_is_git_repository():
-        assert_is_git_ignored(ENCRYPTION_KEY_FILE)
+        assert_is_git_ignored(key_filepath)
 
     if len(encryption_key) < ENCRYPTION_KEY_LENGTH:
         raise EncryptionKeyTooShortError(f"""
@@ -122,12 +131,15 @@ def get_encryption_key():
     return encryption_key
 
 
-def create_encryption_key_if_not_exist():
+def create_encryption_key_if_not_exist(key_filepath=None):
 
-    if os.path.exists(ENCRYPTION_KEY_FILE):
+    if not key_filepath:
+        key_filepath = ENCRYPTION_KEY_FILE
+
+    if os.path.exists(key_filepath):
         return False
 
-    with open(ENCRYPTION_KEY_FILE, 'wb') as f:
+    with open(key_filepath, 'wb') as f:
         content = {
             'key': ''.join(
                 random.choices(

@@ -32,13 +32,18 @@ def print_env(env_path):
 
 
 @click.command()
-@click.argument('directory')
-def encrypt(directory):
-    """Encrypt all yml files in a given directory."""
+@click.argument('path')
+@click.option('--key_filepath', '-k')
+def encrypt(path, key_filepath=None):
+    """Encrypt all yml files in a given path."""
 
-    filepaths = sorted(
-        glob(os.path.join(directory, '*.yml')) +
-        glob(os.path.join(directory, '*.yaml')))
+    if os.path.isdir(path):
+        filepaths = sorted(
+            glob(os.path.join(path, '*.yml')) +
+            glob(os.path.join(path, '*.yaml')))
+
+    else:
+        filepaths = [path]
 
     for filepath in filepaths:
         with open(filepath, 'r') as f:
@@ -53,23 +58,30 @@ def encrypt(directory):
                     content = f.read()
                     # -- used here only to validate
                     load_yaml(content)
-                    g.write(crypto.encrypt(content))
+                    g.write(crypto.encrypt(content, key_filepath))
 
                 except BaseException as e:
                     raise click.ClickException(e.args[0])
 
 
 @click.command()
-@click.argument('directory')
-def decrypt(directory):
-    for filepath in glob(os.path.join(directory, '*.gpg')):
+@click.argument('path')
+@click.option('--key_filepath', '-k')
+def decrypt(path, key_filepath=None):
+    if os.path.isdir(path):
+        filepaths = glob(os.path.join(path, '*.gpg'))
+
+    else:
+        filepaths = [path]
+
+    for filepath in filepaths:
         with open(filepath, 'r') as f:
             yml_filepath = filepath.replace('.gpg', '.yml')
             with open(yml_filepath, 'w') as g:
                 click.secho(f'[DECRYPTING] {filepath}', color='green')
 
                 try:
-                    g.write(crypto.decrypt(f.read()))
+                    g.write(crypto.decrypt(f.read(), key_filepath))
 
                 except BaseException as e:
                     raise click.ClickException(e.args[0])
