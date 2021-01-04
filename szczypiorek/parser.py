@@ -6,7 +6,11 @@ import click
 from .fields import BaseField
 from .crypto import decrypt
 from .utils import load_yaml, flatten, substitute
-from .constants import ENVIRONMENT_GPG, ENVIRONMENT_GPG_FILE
+from .constants import (
+    ENVIRONMENT_GPG_ENV_NAME,
+    ENVIRONMENT_GPG_FILE_ENV_NAME,
+    ENVIRONMENT_GPG_DEFAULT,
+)
 
 
 class Env:
@@ -72,14 +76,16 @@ class EnvParser:
 
     def get_env_from_gpg(self):
 
-        env_from_gpg = os.environ.get(ENVIRONMENT_GPG)
+        env_from_gpg = os.environ.get(ENVIRONMENT_GPG_ENV_NAME)
         env_key = (
             f'{self.__class__.__module__}.'
             f'{self.__class__.__name__}'
-            f'(environ.{ENVIRONMENT_GPG})')
+            f'(environ.{ENVIRONMENT_GPG_ENV_NAME})')
 
         if not env_from_gpg:
-            env_path = os.environ.get(ENVIRONMENT_GPG_FILE, 'env.gpg')
+            env_path = os.environ.get(
+                ENVIRONMENT_GPG_FILE_ENV_NAME,
+                ENVIRONMENT_GPG_DEFAULT)
             env_key = (
                 f'{self.__class__.__module__}.'
                 f'{self.__class__.__name__}'
