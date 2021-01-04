@@ -17,8 +17,9 @@ from .exceptions import (
     EncryptionKeyTooShortError,
 )
 from .constants import (
-    ENCRYPTION_KEY_FILE,
-    ENCRYPTION_KEY_ENV,
+    ENCRYPTION_KEY_FILE_ENV_NAME,
+    ENCRYPTION_KEY_DEFAULT,
+    ENCRYPTION_KEY_ENV_NAME,
     ENCRYPTION_KEY_LENGTH,
 )
 
@@ -62,13 +63,16 @@ def get_encryption_key(key_filepath=None):
 
         # -- only attempt reading from ENV if key not explicitly set
         if not key_filepath:
-            encryption_key = os.environ.get(ENCRYPTION_KEY_ENV)
-            encryption_key_source = f"'{ENCRYPTION_KEY_ENV}' environment variable"  # noqa
+            encryption_key = os.environ.get(ENCRYPTION_KEY_ENV_NAME)
+            encryption_key_source = (
+                f"'{ENCRYPTION_KEY_ENV_NAME}' environment variable")
 
         if not encryption_key:
             # -- if key file path not given take default one
             if not key_filepath:
-                key_filepath = ENCRYPTION_KEY_FILE
+                key_filepath = os.environ.get(
+                    ENCRYPTION_KEY_FILE_ENV_NAME,
+                    ENCRYPTION_KEY_DEFAULT)
 
             encryption_key_source = f"'{key_filepath}' file"
             with open(key_filepath, 'rb') as f:
@@ -134,7 +138,9 @@ def get_encryption_key(key_filepath=None):
 def create_encryption_key_if_not_exist(key_filepath=None):
 
     if not key_filepath:
-        key_filepath = ENCRYPTION_KEY_FILE
+        key_filepath = os.environ.get(
+            ENCRYPTION_KEY_FILE_ENV_NAME,
+            ENCRYPTION_KEY_DEFAULT)
 
     if os.path.exists(key_filepath):
         return False

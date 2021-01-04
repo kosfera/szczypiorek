@@ -60,6 +60,18 @@ deploy/development.yml
 
 ## FAQ
 
+### How and in which order szczypiorek resolves encryption key and environment gpg?
+
+1. Encryption key is searched in various places in this order:
+- `SZCZYPIOREK_ENCRYPTION_KEY` environment variable where it's expected that the **content** of the **encryption key** will be stored.
+- `SZCZYPIOREK_ENCRYPTION_KEY_FILE` environment variable where the **path** to chosen **encryption key** file is stored
+- if above is not found szczypiorek tries default `.szczypiorek_encryption_key` file.
+
+2. Environment gpg is searched in various places in this order:
+- `SZCZYPIOREK_ENVIRONMENT_GPG` environment variable where it's expected that the **content** of the **environment gpg** will be stored.
+- `SZCZYPIOREK_ENVIRONMENT_GPG_FILE` environment variable where the **path** to chosen **environment gpg** file is stored
+- if above is not found szczypiorek tries default `env.gpg` file.
+
 ### How szczypiorek behaves when deployed?
 
 When deployed for the parser to work correctly one needs two things:
