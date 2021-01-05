@@ -21,6 +21,12 @@ class GitTestCase(BaseTestCase):
 
         assert assert_is_git_ignored(str(f)) is True
 
+    def test_assert_is_git_ignored__is_ignored__no_file(self):
+
+        bash('git init')
+
+        assert assert_is_git_ignored(None) is True
+
     def test_assert_is_git_ignored__is_not_ignored(self):
 
         bash('git init')
