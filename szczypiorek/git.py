@@ -5,6 +5,9 @@ from .exceptions import FileNotIgnoredError
 
 
 def assert_is_git_ignored(filepath):
+    if not filepath:
+        return True
+
     result = bash(f'git check-ignore {filepath}')
 
     if result.stdout:
