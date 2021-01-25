@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 import json
 import base64
+import hashlib
 
 import gnupg
 
@@ -28,20 +29,55 @@ def encrypt(content, key_filepath=None):
     gpg = gnupg.GPG()
 
     create_encryption_key_if_not_exist(key_filepath)
-    return str(
+
+    key, key_hash = get_encryption_key(key_filepath)
+
+    gpg_content = str(
         gpg.encrypt(
             content,
             symmetric='AES256',
-            passphrase=get_encryption_key(key_filepath),
+            passphrase=key,
             recipients=None))
+
+    content = {
+        'key_hash': key_hash,
+        'gpg': gpg_content.strip(),
+    }
+    content = json.dumps(content)
+    content = content.encode('utf8')
+    content = base64.b64encode(content)
+
+    return content.decode('utf8')
 
 
 def decrypt(content, key_filepath=None):
     gpg = gnupg.GPG()
 
+    try:
+        content = base64.b64decode(content).decode('utf8')
+        content = json.loads(content)
+        gpg_content = content['gpg']
+        gpg_key_hash = content['key_hash']
+
+    except Exception:
+        raise DecryptionError("""
+            Something went wrong while attempting to decrypt. The big chance
+            is that you've messed around with the payload.
+
+            Therefore if you see this message it means that you're trying to
+            do something bad. Stop doing that.
+        """)
+
+    key, key_hash = get_encryption_key(key_filepath)
+
+    if gpg_key_hash != key_hash:
+        raise DecryptionError("""
+            It seems that different key was used for encryption and decryption.
+        """)
+
     decrypted = gpg.decrypt(
-        content,
-        passphrase=get_encryption_key(key_filepath))
+        gpg_content,
+        passphrase=key)
 
     if decrypted.ok:
         return str(decrypted)
@@ -78,8 +114,11 @@ def get_encryption_key(key_filepath=None):
             with open(key_filepath, 'rb') as f:
                 encryption_key = f.read()
 
-        encryption_key = base64.b64decode(encryption_key).decode('utf8')
-        encryption_key = json.loads(encryption_key)['key']
+        data = base64.b64decode(encryption_key)
+        data = data.decode('utf8')
+        data = json.loads(data)
+        encryption_key_hash = data['hash']
+        encryption_key = data['key']
 
     except FileNotFoundError:
         raise EncryptionKeyFileMissingError(f"""
@@ -110,7 +149,8 @@ def get_encryption_key(key_filepath=None):
             json file encoded with base64. It takes the following shape:
 
             {{
-                "key": <autmatically generated secret>,
+                "key": <automatically generated secret>,
+                "hash": <automatically generated secret's hash>,
                 "created_datetime": <iso datetime of the key creation>
             }}
         """)
@@ -132,7 +172,7 @@ def get_encryption_key(key_filepath=None):
             file and run 'decrypt' phase one more time.
         """)
 
-    return encryption_key
+    return encryption_key, encryption_key_hash
 
 
 def create_encryption_key_if_not_exist(key_filepath=None):
@@ -146,12 +186,14 @@ def create_encryption_key_if_not_exist(key_filepath=None):
         return False
 
     with open(key_filepath, 'wb') as f:
+        key = ''.join(
+            random.choices(
+                string.ascii_letters + string.digits,
+                k=ENCRYPTION_KEY_LENGTH))
         content = {
-            'key': ''.join(
-                random.choices(
-                    string.ascii_letters + string.digits,
-                    k=ENCRYPTION_KEY_LENGTH)),
+            'key': key,
             'created_datetime': datetime.utcnow().isoformat(),
+            'hash': hashlib.sha256(key.encode('utf8')).hexdigest(),
         }
         content = json.dumps(content)
         content = content.encode('utf8')

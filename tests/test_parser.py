@@ -33,13 +33,13 @@ class EnvParserTestCase(BaseTestCase):
         env.EnvParser._envs_cache = {}
         env.EnvParser._envs_gpg_cache = {}
         try:
-            del os.environ['SZCZYPIOREK_ENVIRONMENT_GPG_FILE']
+            del os.environ['SZCZYPIOREK_ENVIRONMENT_FILE']
 
         except KeyError:
             pass
 
         try:
-            del os.environ['SZCZYPIOREK_ENVIRONMENT_GPG']
+            del os.environ['SZCZYPIOREK_ENVIRONMENT']
 
         except KeyError:
             pass
@@ -67,7 +67,7 @@ class EnvParserTestCase(BaseTestCase):
               of:
                 workers: '113'
         '''))
-        self.root_dir.join('env.gpg').write(content, mode='w')
+        self.root_dir.join('env.szczyp').write(content, mode='w')
 
         e = MyEnvParser().parse()
 
@@ -99,7 +99,7 @@ class EnvParserTestCase(BaseTestCase):
               of:
                 workers: '113'
         '''))
-        self.root_dir.join('env.gpg').write(content, mode='w')
+        self.root_dir.join('env.szczyp').write(content, mode='w')
 
         e = MyEnvParser().parse()
 
@@ -135,7 +135,7 @@ class EnvParserTestCase(BaseTestCase):
               of:
                 workers: '113'
         '''))
-        self.root_dir.join('env.gpg').write(content, mode='w')
+        self.root_dir.join('env.szczyp').write(content, mode='w')
 
         e = MyEnvParser().parse()
 
@@ -161,7 +161,7 @@ class EnvParserTestCase(BaseTestCase):
               key: secret.whatever
             is_important: true
         '''))
-        self.root_dir.join('env.gpg').write(content, mode='w')
+        self.root_dir.join('env.szczyp').write(content, mode='w')
 
         for i in range(2):
             e = MyEnvParser().parse()
@@ -170,12 +170,12 @@ class EnvParserTestCase(BaseTestCase):
             assert e.is_important is True
 
         assert secho.call_args_list == [
-            call('[LOADING] env.gpg', color='green'),
+            call('[LOADING] env.szczyp', color='green'),
             call(
-                '[PARSING] tests.test_parser.MyEnvParser(env.gpg)',
+                '[PARSING] tests.test_parser.MyEnvParser(env.szczyp)',
                 color='green'),
             call(
-                '[PARSING] tests.test_parser.MyEnvParser(env.gpg)',
+                '[PARSING] tests.test_parser.MyEnvParser(env.szczyp)',
                 color='green'),
         ]
 
@@ -206,22 +206,22 @@ class EnvParserTestCase(BaseTestCase):
               key: secret.whatever
             is_important: true
         '''))
-        self.root_dir.join('env.gpg').write(content, mode='w')
+        self.root_dir.join('env.szczyp').write(content, mode='w')
 
         MyEnvParser0().parse()
         MyEnvParser1().parse()
         MyEnvParser2().parse()
 
         assert secho.call_args_list == [
-            call('[LOADING] env.gpg', color='green'),
+            call('[LOADING] env.szczyp', color='green'),
             call(
-                '[PARSING] tests.test_parser.MyEnvParser0(env.gpg)',
+                '[PARSING] tests.test_parser.MyEnvParser0(env.szczyp)',
                 color='green'),
             call(
-                '[PARSING] tests.test_parser.MyEnvParser1(env.gpg)',
+                '[PARSING] tests.test_parser.MyEnvParser1(env.szczyp)',
                 color='green'),
             call(
-                '[PARSING] tests.test_parser.MyEnvParser2(env.gpg)',
+                '[PARSING] tests.test_parser.MyEnvParser2(env.szczyp)',
                 color='green'),
         ]
 
@@ -251,7 +251,7 @@ class EnvParserTestCase(BaseTestCase):
               b:
                 c: http://hello.word.org
         '''))
-        self.root_dir.join('env.gpg').write(content, mode='w')
+        self.root_dir.join('env.szczyp').write(content, mode='w')
 
         e = MyEnvParser().parse()
 
@@ -286,7 +286,7 @@ class EnvParserTestCase(BaseTestCase):
               b:
                 c: http://hello.word.org
         '''))
-        os.environ['SZCZYPIOREK_ENVIRONMENT_GPG'] = content
+        os.environ['SZCZYPIOREK_ENVIRONMENT'] = content
 
         e = MyEnvParser().parse()
 
@@ -311,7 +311,7 @@ class EnvParserTestCase(BaseTestCase):
             what:
               event: yo
         '''))
-        self.root_dir.join('env.gpg').write(content, mode='w')
+        self.root_dir.join('env.szczyp').write(content, mode='w')
 
         e = MyEnvParser().parse()
 
@@ -337,7 +337,7 @@ class EnvParserTestCase(BaseTestCase):
             what:
               event: yo
         '''))
-        self.root_dir.join('env.gpg').write(content, mode='w')
+        self.root_dir.join('env.szczyp').write(content, mode='w')
 
         e = MyEnvParser().parse()
 
@@ -369,7 +369,7 @@ class EnvParserTestCase(BaseTestCase):
               of:
                 workers: not.number
         '''))
-        self.root_dir.join('env.gpg').write(content, mode='w')
+        self.root_dir.join('env.szczyp').write(content, mode='w')
 
         with pytest.raises(ValidatorError) as e:
             MyEnvParser().parse()

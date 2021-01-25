@@ -163,11 +163,11 @@ There's still a lot of work to do, even though the basic functionality of **szcz
 
 - [ ] **[HIGH PRIO]** host the docs on github pages https://www.mkdocs.org/user-guide/deploying-your-docs/
 
-- [ ] **[HIGH PRIO]** replace the parsing mechanism with Pydentic models to make it more modern and more like python static typing.
+- [ ] **[HIGH PRIO]** replace the parsing mechanism with Pydantic models to make it more modern and more like python static typing.
 
 - [ ] **[HIGH PRIO]** add an option to sync the secret of the admin
 
-- [ ] **[HIGH PRIO]** for `encrypt` add a file which stores information about which `key` encoded which file so that one could in theory use strong key to encode one set of files and then use another one which can be shared to encode for example `development.yml`. The current idea is to introduce the 3rd field in the `.szczypiorek_encryption_key` file which then can be stored in the history.
+- [X] **[HIGH PRIO]** for `encrypt` add a file which stores information about which `key` encoded which file so that one could in theory use strong key to encode one set of files and then use another one which can be shared to encode for example `development.yml`. The current idea is to introduce the 3rd field in the `.szczypiorek_encryption_key` file which then can be stored in the history.
 
 - [ ] **[LOW PRIO]** Enable imports in the yml files. It should take the following form:
 ```yaml
