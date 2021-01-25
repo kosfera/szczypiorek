@@ -30,7 +30,7 @@ setup(
     name='szczypiorek',
     description=(
         'Szczypiorek environment management for humans.'),
-    version='1.0.8',
+    version='1.0.9',
     url='https://github.com/cosphere-org/szczypiorek',
     author='CoSphere Tech',
     author_email='contact@cosphere.org',
