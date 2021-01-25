@@ -23,6 +23,26 @@ from szczypiorek.exceptions import (
 from tests import BaseTestCase
 
 
+def read_encrypted(content):
+    content = base64.b64decode(content).decode('utf8')
+    content = json.loads(content)
+
+    return content
+
+
+def write_encrypted(gpg_content, key_hash):
+
+    content = {
+        'key_hash': key_hash,
+        'gpg': gpg_content,
+    }
+    content = json.dumps(content)
+    content = content.encode('utf8')
+    content = base64.b64encode(content)
+
+    return content
+
+
 class CryptoTestCase(BaseTestCase):
 
     def setUp(self):
@@ -39,12 +59,15 @@ class CryptoTestCase(BaseTestCase):
     def test_encrypt__empty_content__success(self):
 
         self.mocker.patch(
-            'szczypiorek.crypto.get_encryption_key').return_value = 'secret'
+            'szczypiorek.crypto.get_encryption_key'
+        ).return_value = ('secret', 'hash')
 
         encrypted = encrypt('').strip()
 
-        assert encrypted.startswith('-----BEGIN PGP MESSAGE-----')
-        assert encrypted.endswith('-----END PGP MESSAGE-----')
+        content = read_encrypted(encrypted)
+        assert content['key_hash'] == 'hash'
+        assert content['gpg'].startswith('-----BEGIN PGP MESSAGE-----')
+        assert content['gpg'].endswith('-----END PGP MESSAGE-----')
         assert decrypt(encrypted) == ''
 
     def test_encrypt__no_encryption_key__success(self):
@@ -54,8 +77,10 @@ class CryptoTestCase(BaseTestCase):
 
         encrypted = encrypt('hello world').strip()
 
-        assert encrypted.startswith('-----BEGIN PGP MESSAGE-----')
-        assert encrypted.endswith('-----END PGP MESSAGE-----')
+        content = read_encrypted(encrypted)
+        assert content['key_hash'] is not None
+        assert content['gpg'].startswith('-----BEGIN PGP MESSAGE-----')
+        assert content['gpg'].endswith('-----END PGP MESSAGE-----')
         assert decrypt(encrypted) == 'hello world'
         assert self.root_dir.join(
             '.szczypiorek_encryption_key').exists() is True
@@ -66,8 +91,10 @@ class CryptoTestCase(BaseTestCase):
 
         encrypted = encrypt('hello world').strip()
 
-        assert encrypted.startswith('-----BEGIN PGP MESSAGE-----')
-        assert encrypted.endswith('-----END PGP MESSAGE-----')
+        content = read_encrypted(encrypted)
+        assert content['key_hash'] is not None
+        assert content['gpg'].startswith('-----BEGIN PGP MESSAGE-----')
+        assert content['gpg'].endswith('-----END PGP MESSAGE-----')
         assert decrypt(encrypted) == 'hello world'
         assert len(self.root_dir.join(
             '.szczypiorek_encryption_key').read()) > 128
@@ -83,10 +110,27 @@ class CryptoTestCase(BaseTestCase):
 
         self.mocker.patch(
             'szczypiorek.crypto.get_encryption_key'
-        ).return_value = 'secret'
+        ).return_value = ('secret', 'hash')
 
         with pytest.raises(DecryptionError) as e:
             decrypt('what is it')
+
+        assert e.value.args[0] == normalize("""
+            Something went wrong while attempting to decrypt. The big chance
+            is that you've messed around with the payload.
+
+            Therefore if you see this message it means that you're trying to
+            do something bad. Stop doing that.
+        """)
+
+    def test_decrypt__broken_gpg__error(self):
+
+        self.mocker.patch(
+            'szczypiorek.crypto.get_encryption_key'
+        ).return_value = ('secret', 'hash')
+
+        with pytest.raises(DecryptionError) as e:
+            decrypt(write_encrypted('what is it', 'hash'))
 
         assert e.value.args[0] == normalize("""
             Something went wrong while attempting to decrypt. The big chance
@@ -96,11 +140,24 @@ class CryptoTestCase(BaseTestCase):
             do something bad. Stop doing that.
         """)
 
+    def test_decrypt__key_changed__error(self):
+
+        self.mocker.patch(
+            'szczypiorek.crypto.get_encryption_key'
+        ).return_value = ('secret', 'hash0')
+
+        with pytest.raises(DecryptionError) as e:
+            decrypt(write_encrypted('what is it', 'hash1'))
+
+        assert e.value.args[0] == normalize("""
+            It seems that different key was used for encryption and decryption.
+        """)
+
     def test_decrypt__wrong_passphrase__error(self):
 
         self.mocker.patch(
             'szczypiorek.crypto.get_encryption_key'
-        ).side_effect = ['secret.0', 'secret.1']
+        ).side_effect = [('secret.0', 'hash'), ('secret.1', 'hash')]
 
         encrypted = encrypt('what is it')
 
@@ -122,19 +179,26 @@ class CryptoTestCase(BaseTestCase):
 
         key = 10 * 'd8s9s8c9s8s9ds8d98sd9s89cs8c9s8d'
         self.root_dir.join('.szczypiorek_encryption_key').write(
-            base64.b64encode(json.dumps({'key': key}).encode('utf8')),
+            base64.b64encode(json.dumps({
+                'key': key,
+                'hash': 'hash',
+            }).encode('utf8')),
             mode='wb')
 
-        assert get_encryption_key() == key
+        assert get_encryption_key() == (key, 'hash')
 
     def test_get_encryption_key__custom_file__success(self):
 
         key = 10 * 'd8s9s8c9s8s9ds8d98sd9s89cs8c9s8d'
         self.root_dir.join('.development_encryption_key').write(
-            base64.b64encode(json.dumps({'key': key}).encode('utf8')),
+            base64.b64encode(json.dumps({
+                'key': key,
+                'hash': 'hash',
+            }).encode('utf8')),
             mode='wb')
 
-        assert get_encryption_key('.development_encryption_key') == key
+        assert get_encryption_key(
+            '.development_encryption_key') == (key, 'hash')
 
     def test_get_encryption_key__file_does_not_exist__error(self):
 
@@ -203,7 +267,8 @@ class CryptoTestCase(BaseTestCase):
             json file encoded with base64. It takes the following shape:
 
             {
-                "key": <autmatically generated secret>,
+                "key": <automatically generated secret>,
+                "hash": <automatically generated secret's hash>,
                 "created_datetime": <iso datetime of the key creation>
             }
         """)  # noqa
@@ -222,7 +287,8 @@ class CryptoTestCase(BaseTestCase):
             json file encoded with base64. It takes the following shape:
 
             {
-                "key": <autmatically generated secret>,
+                "key": <automatically generated secret>,
+                "hash": <automatically generated secret's hash>,
                 "created_datetime": <iso datetime of the key creation>
             }
         """)  # noqa
@@ -231,7 +297,10 @@ class CryptoTestCase(BaseTestCase):
 
         key = 'd8s9s8c9s8s9ds8d98sd9s89cs8c9s8d'
         self.root_dir.join('.szczypiorek_encryption_key').write(
-            base64.b64encode(json.dumps({'key': key}).encode('utf8')),
+            base64.b64encode(json.dumps({
+                'key': key,
+                'hash': 'hash',
+            }).encode('utf8')),
             mode='wb')
 
         self.mocker.patch(
@@ -250,7 +319,10 @@ class CryptoTestCase(BaseTestCase):
 
         key = 'abc123'
         self.root_dir.join('.szczypiorek_encryption_key').write(
-            base64.b64encode(json.dumps({'key': key}).encode('utf8')),
+            base64.b64encode(json.dumps({
+                'key': key,
+                'hash': 'hash',
+            }).encode('utf8')),
             mode='wb')
 
         with pytest.raises(EncryptionKeyTooShortError) as e:

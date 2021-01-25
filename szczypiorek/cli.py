@@ -3,6 +3,7 @@ from glob import glob
 import os
 import re
 import importlib
+import json
 
 import click
 
@@ -23,12 +24,33 @@ def cli():
 def print_env(env_path):
     """Print currently loaded env variables into stdout."""
 
+    def hide_sensitive(name, value):
+        if (name.endswith('password') or
+                name.endswith('key') or
+                name.endswith('secret')):
+            return 10 * '*'
+
+        return value
+
     env_path_parts = env_path.split('.')
     env_path = '.'.join(env_path_parts[:-1])
     env_variable = env_path_parts[-1]
-
     env = getattr(importlib.import_module(env_path), env_variable)
-    click.echo('\n'.join([f'{k}: {v}' for k, v in env.env.items()]))
+    for k, v in env.env.items():
+        v = hide_sensitive(k, v)
+
+        try:
+            if isinstance(json.loads(v), dict):
+                v = json.loads(v)
+                for kk, vv in v.items():
+                    v[kk] = hide_sensitive(kk, vv)
+
+                v = json.dumps(v, indent=4)
+
+        except (json.decoder.JSONDecodeError, TypeError):
+            pass
+
+        click.echo(f'{k}: {v}')
 
 
 @click.command()
@@ -47,7 +69,8 @@ def encrypt(path, key_filepath=None):
 
     for filepath in filepaths:
         with open(filepath, 'r') as f:
-            gpg_filepath = re.sub(r'(\.yml|\.yaml)', '.gpg', filepath)
+            szczyp_filepath = re.sub(
+                r'(\.yml|\.yaml)', '.szczyp', filepath)
 
             click.secho(f'[ENCRYPTING] {filepath}', color='green')
 
@@ -63,7 +86,7 @@ def encrypt(path, key_filepath=None):
                 raise click.ClickException(e.args[0])
 
             # -- WRITE at the end when it's certain that all went well
-            with open(gpg_filepath, 'w') as g:
+            with open(szczyp_filepath, 'w') as g:
                 g.write(content)
 
 
@@ -72,14 +95,14 @@ def encrypt(path, key_filepath=None):
 @click.option('--key_filepath', '-k')
 def decrypt(path, key_filepath=None):
     if os.path.isdir(path):
-        filepaths = glob(os.path.join(path, '*.gpg'))
+        filepaths = glob(os.path.join(path, '*.szczyp'))
 
     else:
         filepaths = [path]
 
     for filepath in filepaths:
         with open(filepath, 'r') as f:
-            yml_filepath = filepath.replace('.gpg', '.yml')
+            yml_filepath = filepath.replace('.szczyp', '.yml')
             click.secho(f'[DECRYPTING] {filepath}', color='green')
 
             try:

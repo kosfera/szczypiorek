@@ -1,5 +1,6 @@
 
 import textwrap
+import os
 
 from click.testing import CliRunner
 from bash import bash
@@ -15,7 +16,22 @@ class MyEnvParser(env.EnvParser):
     a = env.CharField()
 
 
+class SensitiveEnvParser(env.EnvParser):
+
+    password = env.CharField()
+    my_super_password = env.CharField()
+    secret = env.CharField()
+    some_secret = env.CharField()
+    my_key = env.CharField()
+    key = env.CharField()
+    not_some_important = env.CharField()
+    a = env.CharField()
+    c = env.CharField()
+
+
 my_env = None
+
+sensitive_env = None
 
 
 class CliTestCase(BaseTestCase):
@@ -23,6 +39,28 @@ class CliTestCase(BaseTestCase):
     def setUp(self):
         super(CliTestCase, self).setUp()
         self.runner = CliRunner()
+
+        try:
+            self.root_dir.join('.szczypiorek_encryption_key').remove()
+
+        except Exception:
+            pass
+
+        try:
+            del os.environ['SZCZYPIOREK_ENCRYPTION_KEY']
+
+        except KeyError:
+            pass
+
+        try:
+            del os.environ['SZCZYPIOREK_ENCRYPTION_KEY_FILE']
+
+        except KeyError:
+            pass
+
+        MyEnvParser._envs_gpg_cache = {}
+        SensitiveEnvParser._envs_gpg_cache = {}
+        env.EnvParser._envs_gpg_cache = {}
 
     #
     # PRINT_ENV
@@ -32,7 +70,7 @@ class CliTestCase(BaseTestCase):
         content = encrypt(textwrap.dedent('''
             a: b
         '''))
-        self.root_dir.join('env.gpg').write(content, mode='w')
+        self.root_dir.join('env.szczyp').write(content, mode='w')
 
         global my_env
         my_env = MyEnvParser().parse()  # noqa
@@ -43,6 +81,42 @@ class CliTestCase(BaseTestCase):
         assert result.exit_code == 0
         assert result.output.strip() == textwrap.dedent('''
             a: b
+        ''').strip()
+
+    def test_print_env__hide_sensitive(self):
+
+        content = encrypt(textwrap.dedent('''
+            password: my.secret
+            my_super_password: 123whatever
+            secret: not tell anyone
+            some_secret: not just any secret
+            my_key: to open any doors
+            key: yup
+            not_some_important: just show it
+            a: b
+            c: '{"my_password": "yes hidden"}'
+        '''))
+        self.root_dir.join('env.szczyp').write(content, mode='w')
+
+        global my_env
+        my_env = SensitiveEnvParser().parse()  # noqa
+
+        result = self.runner.invoke(
+            cli, ['print-env', 'tests.test_cli.my_env'])
+
+        assert result.exit_code == 0
+        assert result.output.strip() == textwrap.dedent('''
+            a: b
+            c: {
+                "my_password": "**********"
+            }
+            key: **********
+            my_key: **********
+            my_super_password: **********
+            not_some_important: just show it
+            password: **********
+            secret: **********
+            some_secret: **********
         ''').strip()
 
     #
@@ -76,7 +150,7 @@ class CliTestCase(BaseTestCase):
             str(self.root_dir.join('.git')),
             str(self.root_dir.join('.gitignore')),
             str(self.root_dir.join('.szczypiorek_encryption_key')),
-            str(self.root_dir.join('a.gpg')),
+            str(self.root_dir.join('a.szczyp')),
             str(self.root_dir.join('a.yml')),
         ]
 
@@ -104,9 +178,9 @@ class CliTestCase(BaseTestCase):
             str(self.root_dir.join('.git')),
             str(self.root_dir.join('.gitignore')),
             str(self.root_dir.join('.szczypiorek_encryption_key')),
-            str(self.root_dir.join('a.gpg')),
+            str(self.root_dir.join('a.szczyp')),
             str(self.root_dir.join('a.yml')),
-            str(self.root_dir.join('b.gpg')),
+            str(self.root_dir.join('b.szczyp')),
             str(self.root_dir.join('b.yml')),
         ]
 
@@ -136,7 +210,7 @@ class CliTestCase(BaseTestCase):
             str(self.root_dir.join('.development_encryption_key')),
             str(self.root_dir.join('.git')),
             str(self.root_dir.join('.gitignore')),
-            str(self.root_dir.join('a.gpg')),
+            str(self.root_dir.join('a.szczyp')),
             str(self.root_dir.join('a.yml')),
         ]
 
@@ -155,7 +229,7 @@ class CliTestCase(BaseTestCase):
 
     def test_encrypt__some_error__do_not_overwrite_existing(self):
 
-        self.root_dir.join('a.gpg').write('hello gpg')
+        self.root_dir.join('a.szczyp').write('hello gpg')
 
         self.root_dir.join('a.yml').write(textwrap.dedent('''
             a:
@@ -167,7 +241,7 @@ class CliTestCase(BaseTestCase):
 
         assert result.exit_code == 1
         assert 'Error: Well it seems that the' in result.output.strip()
-        assert self.root_dir.join('a.gpg').read() == 'hello gpg'
+        assert self.root_dir.join('a.szczyp').read() == 'hello gpg'
 
     #
     # DECRYPT
@@ -195,16 +269,16 @@ class CliTestCase(BaseTestCase):
               b:
                 c: http://hello.word.org
         '''))
-        self.root_dir.join('e2e.gpg').write(content, mode='w')
+        self.root_dir.join('e2e.szczyp').write(content, mode='w')
 
         result = self.runner.invoke(
             cli,
-            ['decrypt', str(self.root_dir.join('e2e.gpg'))])
+            ['decrypt', str(self.root_dir.join('e2e.szczyp'))])
 
         assert result.exit_code == 0
         assert sorted(self.root_dir.listdir()) == [
             str(self.root_dir.join('.szczypiorek_encryption_key')),
-            str(self.root_dir.join('e2e.gpg')),
+            str(self.root_dir.join('e2e.szczyp')),
             str(self.root_dir.join('e2e.yml')),
         ]
 
@@ -224,13 +298,13 @@ class CliTestCase(BaseTestCase):
               b:
                 c: http://hello.word.org
         '''))
-        self.root_dir.join('env.gpg').write(content, mode='w')
+        self.root_dir.join('env.szczyp').write(content, mode='w')
 
         result = self.runner.invoke(cli, ['decrypt', str(self.root_dir)])
         assert result.exit_code == 0
         assert sorted(self.root_dir.listdir()) == [
             str(self.root_dir.join('.szczypiorek_encryption_key')),
-            str(self.root_dir.join('env.gpg')),
+            str(self.root_dir.join('env.szczyp')),
             str(self.root_dir.join('env.yml')),
         ]
 
@@ -252,43 +326,43 @@ class CliTestCase(BaseTestCase):
                     c: http://hello.word.org
             '''),
             '.e2e_encryption_key')
-        self.root_dir.join('e2e.gpg').write(content, mode='w')
+        self.root_dir.join('e2e.szczyp').write(content, mode='w')
 
         result = self.runner.invoke(
             cli,
             [
                 'decrypt',
                 '-k', '.e2e_encryption_key',
-                str(self.root_dir.join('e2e.gpg'))
+                str(self.root_dir.join('e2e.szczyp'))
             ])
 
         assert result.exit_code == 0
         assert sorted(self.root_dir.listdir()) == [
             str(self.root_dir.join('.e2e_encryption_key')),
-            str(self.root_dir.join('e2e.gpg')),
+            str(self.root_dir.join('e2e.szczyp')),
             str(self.root_dir.join('e2e.yml')),
         ]
 
     def test_decrypt__some_error(self):
 
-        self.root_dir.join('a.gpg').write('whatever')
+        self.root_dir.join('a.szczyp').write('whatever')
 
         result = self.runner.invoke(cli, ['decrypt', str(self.root_dir)])
 
         assert result.exit_code == 1
         assert (
-            "Couldn't find the '.szczypiorek_encryption_key' file" in
+            "Something went wrong while attempting to decrypt" in
             result.output.strip())
 
     def test_decrypt__some_error__do_not_overwrite_existing(self):
 
-        self.root_dir.join('a.gpg').write('whatever')
+        self.root_dir.join('a.szczyp').write('whatever')
         self.root_dir.join('a.yml').write('hello yml')
 
         result = self.runner.invoke(cli, ['decrypt', str(self.root_dir)])
 
         assert result.exit_code == 1
         assert (
-            "Couldn't find the '.szczypiorek_encryption_key' file" in
+            "Something went wrong while attempting to decrypt" in
             result.output.strip())
         assert self.root_dir.join('a.yml').read() == 'hello yml'
