@@ -7,7 +7,17 @@ from bash import bash
 
 import szczypiorek as env
 from szczypiorek.crypto import encrypt
+from szczypiorek.constants import (
+    ENCRYPTION_KEY_ENV_NAME,
+    ENCRYPTION_KEY_FILE_ENV_NAME,
+    ENVIRONMENT_ENV_NAME,
+    ENVIRONMENT_FILE_ENV_NAME,
+    # ENVIRONMENT_DEFAULT,
+    # os.environ[ENVIRONMENT_FILE_ENV_NAME] = str(
+    #     self.root_dir.join('e2e.szczyp'))
+)
 from szczypiorek.cli import cli
+from szczypiorek.utils import load_yaml, dump_yaml
 from tests import BaseTestCase
 
 
@@ -46,17 +56,18 @@ class CliTestCase(BaseTestCase):
         except Exception:
             pass
 
-        try:
-            del os.environ['SZCZYPIOREK_ENCRYPTION_KEY']
+        envs = [
+            ENCRYPTION_KEY_ENV_NAME,
+            ENCRYPTION_KEY_FILE_ENV_NAME,
+            ENVIRONMENT_ENV_NAME,
+            ENVIRONMENT_FILE_ENV_NAME,
+        ]
+        for e in envs:
+            try:
+                del os.environ[e]
 
-        except KeyError:
-            pass
-
-        try:
-            del os.environ['SZCZYPIOREK_ENCRYPTION_KEY_FILE']
-
-        except KeyError:
-            pass
+            except KeyError:
+                pass
 
         MyEnvParser._envs_gpg_cache = {}
         SensitiveEnvParser._envs_gpg_cache = {}
@@ -366,3 +377,284 @@ class CliTestCase(BaseTestCase):
             "Something went wrong while attempting to decrypt" in
             result.output.strip())
         assert self.root_dir.join('a.yml').read() == 'hello yml'
+
+    #
+    # REPLACE
+    #
+    def set_encrypted(self, json, filepath=None, key_filepath=None):
+        content = encrypt(
+            dump_yaml(json),
+            key_filepath=key_filepath)
+        filepath = filepath or 'env.szczyp'
+        self.root_dir.join(filepath).write(content, mode='w')
+
+    def get_decrypted(self, filepath, key_filepath=None):
+        self.runner.invoke(
+            cli,
+            [
+                'decrypt',
+                str(self.root_dir.join(filepath))
+            ])
+
+        filepath = filepath.replace('.szczyp', '.yml')
+        with open(self.root_dir.join(filepath)) as f:
+            return load_yaml(f.read())
+
+    def test_replace__no_replacements(self):
+
+        result = self.runner.invoke(cli, ['replace'])
+
+        assert result.exit_code == 0
+        assert result.output.strip() == ''
+
+    def test_replace__default_env__single_replacement(self):
+
+        env = {
+            'secret': {
+                'key': 'secret.whatever'
+            },
+            'is_important': True,
+            'number': {
+                'of': {
+                    'workers': '113'
+                }
+            }
+        }
+        self.set_encrypted(env)
+
+        result = self.runner.invoke(
+            cli,
+            [
+                'replace',
+                '-r', 'secret.key:known'
+            ])
+
+        assert result.exit_code == 0
+        assert sorted(self.root_dir.listdir()) == [
+            str(self.root_dir.join('.szczypiorek_encryption_key')),
+            str(self.root_dir.join('env.szczyp')),
+        ]
+        content = self.get_decrypted('env.szczyp')
+
+        env['secret']['key'] = 'known'
+        assert content == env
+
+    def test_replace__default_env__multiple_replacements(self):
+
+        env = {
+            'secret': {
+                'key': 'secret.whatever'
+            },
+            'is_important': True,
+            'number': {
+                'of': {
+                    'workers': '113',
+                    'bosses': 12,
+                    'price': 19.21
+                }
+            }
+        }
+        self.set_encrypted(env)
+
+        result = self.runner.invoke(
+            cli,
+            [
+                'replace',
+                '-r', 'secret.key:known',
+                '-r', 'is_important:false',
+                '-r', 'number.of.bosses:13',
+                '-r', 'number.of.price:24.23',
+            ])
+
+        assert result.exit_code == 0
+        assert sorted(self.root_dir.listdir()) == [
+            str(self.root_dir.join('.szczypiorek_encryption_key')),
+            str(self.root_dir.join('env.szczyp')),
+        ]
+        content = self.get_decrypted('env.szczyp')
+
+        env['secret']['key'] = 'known'
+        env['is_important'] = False
+        env['number']['of']['bosses'] = 13
+        env['number']['of']['price'] = 24.23
+        assert content == env
+
+    def test_replace__default_env__only_one_env_changed(self):
+
+        env0 = {
+            'secret': {
+                'key': 'secret.whatever'
+            },
+            'is_important': True,
+        }
+        env1 = {
+            'secret': {
+                'key': 'secret.whatever'
+            },
+            'is_important': True,
+        }
+        self.set_encrypted(env0, 'env0.szczyp')
+        self.set_encrypted(env1, 'env1.szczyp')
+
+        result = self.runner.invoke(
+            cli,
+            [
+                'replace',
+                '-p', 'env0.szczyp',
+                '-r', 'secret.key:known'
+            ])
+
+        assert result.exit_code == 0
+        assert sorted(self.root_dir.listdir()) == [
+            str(self.root_dir.join('.szczypiorek_encryption_key')),
+            str(self.root_dir.join('env0.szczyp')),
+            str(self.root_dir.join('env1.szczyp')),
+        ]
+        content0 = self.get_decrypted('env0.szczyp')
+        content1 = self.get_decrypted('env1.szczyp')
+
+        env0['secret']['key'] = 'known'
+        assert content0 == env0
+        assert content1 == env1
+
+    def test_replace__env_given_by_env_var__single_replacement(self):
+
+        env = {
+            'secret': {
+                'key': 'secret.whatever'
+            },
+            'is_important': True,
+            'number': {
+                'of': {
+                    'workers': '113'
+                }
+            }
+        }
+        self.set_encrypted(env, 'my_env.szczyp')
+        os.environ[ENVIRONMENT_FILE_ENV_NAME] = 'my_env.szczyp'
+
+        result = self.runner.invoke(
+            cli,
+            [
+                'replace',
+                '-r', 'secret.key:known'
+            ])
+
+        assert result.exit_code == 0
+        assert sorted(self.root_dir.listdir()) == [
+            str(self.root_dir.join('.szczypiorek_encryption_key')),
+            str(self.root_dir.join('my_env.szczyp')),
+        ]
+        content = self.get_decrypted('my_env.szczyp')
+
+        env['secret']['key'] = 'known'
+        assert content == env
+
+    def test_replace__env_given_as_argument__single_replacement(self):
+
+        env = {
+            'secret': {
+                'key': 'secret.whatever'
+            },
+            'is_important': True,
+            'number': {
+                'of': {
+                    'workers': '113'
+                }
+            }
+        }
+        self.set_encrypted(env, 'my_env.szczyp')
+
+        result = self.runner.invoke(
+            cli,
+            [
+                'replace',
+                '-p', 'my_env.szczyp',
+                '-r', 'secret.key:known'
+            ])
+
+        assert result.exit_code == 0
+        assert sorted(self.root_dir.listdir()) == [
+            str(self.root_dir.join('.szczypiorek_encryption_key')),
+            str(self.root_dir.join('my_env.szczyp')),
+        ]
+        content = self.get_decrypted('my_env.szczyp')
+
+        env['secret']['key'] = 'known'
+        assert content == env
+
+    def test_replace__env_given_as_argument__does_not_exist(self):
+        env = {
+            'secret': {
+                'key': 'secret.whatever'
+            },
+            'is_important': True,
+            'number': {
+                'of': {
+                    'workers': '113'
+                }
+            }
+        }
+        self.set_encrypted(env, 'my_env.szczyp')
+
+        result = self.runner.invoke(
+            cli,
+            [
+                'replace',
+                '-r', 'secret.key:known'
+            ])
+
+        assert result.exit_code == 1
+        assert result.output.strip() == (
+            'Error: It seems that the file `env.szczyp` does not exist.')
+
+    def test_replace__broken_replacement__syntax_error(self):
+
+        broken_replacement = [
+            'secret known',
+            'secret.key known',
+            'secret.key:',
+            ':what',
+            'a.c b:12',
+            'a&b:12',
+        ]
+
+        for r in broken_replacement:
+            result = self.runner.invoke(
+                cli,
+                [
+                    'replace',
+                    '-r', r
+                ])
+
+            assert result.exit_code == 1
+            assert result.output.strip() == (
+                f'Error: The replacement `{r}` does not follow '
+                f'required syntax.')
+
+    def test_replace__broken_replacement__keyerror(self):
+
+        env = {
+            'secret': {
+                'key': 'secret.whatever'
+            },
+            'is_important': True,
+            'number': {
+                'of': {
+                    'workers': '113'
+                }
+            }
+        }
+        self.set_encrypted(env)
+
+        result = self.runner.invoke(
+            cli,
+            [
+                'replace',
+                '-r', 'a.b.what:known'
+            ])
+
+        assert result.exit_code == 1
+        assert (
+            'It seems that the path `a.b.what` does not exist. Check if '
+            'it\'s\ncorrect.') in result.output

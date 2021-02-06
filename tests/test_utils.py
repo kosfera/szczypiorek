@@ -5,6 +5,7 @@ import pytest
 
 from szczypiorek.utils import (
     fix_yaml,
+    dump_yaml,
     load_yaml,
     flatten,
     substitute,
@@ -22,6 +23,20 @@ def n(t):
 
 
 class UtilsTestCase(BaseTestCase):
+
+    #
+    # DUMP_YAML
+    #
+    def test_dump_yaml__is_valid(self):
+
+        assert dump_yaml({
+            'a': {'b': 'whatever'},
+            'c': True,
+        }).strip() == n('''
+            a:
+              b: whatever
+            c: true
+        ''').strip()
 
     #
     # LOAD_YAML
@@ -47,7 +62,7 @@ class UtilsTestCase(BaseTestCase):
         assert e.value.args[0] == normalize("""
             It seems that you're yaml file is broken.
 
-            Run in through sone online validators to find the reason behind it.
+            Run in through some online validators to find the reason behind it.
         """)
 
     #
