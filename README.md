@@ -58,6 +58,24 @@ Make sure to add to `.gitignore`
 deploy/development.yml
 ```
 
+### Replace secrets on the fly
+
+In certain situations, like when one created dynamical resources during the deployment phase, one would like to be able to replace certain parts of existing `.szczyp` file with some dynamical values.
+In order to achieve that one would have to use the `replace` command:
+
+
+```bash
+szczypiorek replace -r a.b:12 -r a.g.f.secret:password
+```
+
+By default it would use the default encryption key and default szczyp file but one can overwrite it by passing extra arguments. Please run:
+
+```bash
+szczypiorek replace --help
+```
+
+To learn more.
+
 ## FAQ
 
 ### How and in which order szczypiorek resolves encryption key and environment gpg?

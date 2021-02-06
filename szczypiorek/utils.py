@@ -13,8 +13,12 @@ def load_yaml(yaml_content):
         raise BrokenYamlError("""
             It seems that you're yaml file is broken.
 
-            Run in through sone online validators to find the reason behind it.
+            Run in through some online validators to find the reason behind it.
         """)
+
+
+def dump_yaml(yaml_content):
+    return yaml.dump(yaml_content, default_flow_style=False)
 
 
 def fix_yaml(yaml_content):
