@@ -4,7 +4,6 @@ import os
 import re
 import importlib
 import json
-import tempfile
 
 import click
 
@@ -119,8 +118,9 @@ def decrypt(path, key_filepath=None):
     help='Optional path to the specific encryption key')
 def replace(replacement, path=None, key_filepath=None):
     """
-    Replace values in the stored encoded yaml. One should pass the replacement
-    patterns as in the example below:
+    Replace values in the stored encoded yaml.
+
+    One should pass the replacement patterns as in the example below:
 
     szczypiorek replace -r a.b.c:123 -r a.g:67
 
