@@ -156,21 +156,22 @@ def replace(replacement, path=None, key_filepath=None):
 
     # -- replacements
     content = load_yaml(content)
-    for r in replacement:
-        try:
-            k, v = r.split(':')
-            keys = k.split('.')
-            current = content
-            for key in keys[:-1]:
-                current = current[key]
+    for c in content:
+        for r in replacement:
+            try:
+                k, v = r.split(':')
+                keys = k.split('.')
+                current = c
+                for key in keys[:-1]:
+                    current = current[key]
 
-            current[keys[-1]] = cast(v)
+                current[keys[-1]] = cast(v)
 
-        except KeyError:
-            raise click.ClickException(normalize(f'''
-                It seems that the path `{k}` does not exist. Check if it's
-                correct.
-            '''))
+            except KeyError:
+                raise click.ClickException(normalize(f'''
+                    It seems that the path `{k}` does not exist. Check if it's
+                    correct.
+                '''))
 
     with open(yml_filepath, 'w') as f:
         f.write(dump_yaml(content))

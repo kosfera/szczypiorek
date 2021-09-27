@@ -169,12 +169,6 @@ TODO: add it
 
 There's still a lot of work to do, even though the basic functionality of **szczypiorek** is production ready:
 
-- [X] **[HIGH PRIO]** handle `as_env` and  `as_file` attributes of the fields
-
-- [X] **[HIGH PRIO]** support template variables when used without breaking, e.g. when someone uses from the beginning '{{ a.b.c }}' pattern.
-
-- [X] **[HIGH PRIO]** think about different name for the project --> changed from `lily-env` to `szczypiorek`.
-
 - [ ] **[HIGH PRIO]** enable versioning of secrets and a command which is able to clean up all unused secrets
 
 - [ ] **[HIGH PRIO]** use https://github.com/squidfunk/mkdocs-material for docs
@@ -184,8 +178,6 @@ There's still a lot of work to do, even though the basic functionality of **szcz
 - [ ] **[HIGH PRIO]** replace the parsing mechanism with Pydantic models to make it more modern and more like python static typing.
 
 - [ ] **[HIGH PRIO]** add an option to sync the secret of the admin
-
-- [X] **[HIGH PRIO]** for `encrypt` add a file which stores information about which `key` encoded which file so that one could in theory use strong key to encode one set of files and then use another one which can be shared to encode for example `development.yml`. The current idea is to introduce the 3rd field in the `.szczypiorek_encryption_key` file which then can be stored in the history.
 
 - [ ] **[LOW PRIO]** Enable imports in the yml files. It should take the following form:
 ```yaml

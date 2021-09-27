@@ -409,17 +409,19 @@ class CliTestCase(BaseTestCase):
 
     def test_replace__default_env__single_replacement(self):
 
-        env = {
-            'secret': {
-                'key': 'secret.whatever'
-            },
-            'is_important': True,
-            'number': {
-                'of': {
-                    'workers': '113'
+        env = [
+            {
+                'secret': {
+                    'key': 'secret.whatever'
+                },
+                'is_important': True,
+                'number': {
+                    'of': {
+                        'workers': '113'
+                    }
                 }
             }
-        }
+        ]
         self.set_encrypted(env)
 
         result = self.runner.invoke(
@@ -436,24 +438,26 @@ class CliTestCase(BaseTestCase):
         ]
         content = self.get_decrypted('env.szczyp')
 
-        env['secret']['key'] = 'known'
+        env[0]['secret']['key'] = 'known'
         assert content == env
 
     def test_replace__default_env__multiple_replacements(self):
 
-        env = {
-            'secret': {
-                'key': 'secret.whatever'
-            },
-            'is_important': True,
-            'number': {
-                'of': {
-                    'workers': '113',
-                    'bosses': 12,
-                    'price': 19.21
+        env = [
+            {
+                'secret': {
+                    'key': 'secret.whatever'
+                },
+                'is_important': True,
+                'number': {
+                    'of': {
+                        'workers': '113',
+                        'bosses': 12,
+                        'price': 19.21
+                    }
                 }
             }
-        }
+        ]
         self.set_encrypted(env)
 
         result = self.runner.invoke(
@@ -473,26 +477,30 @@ class CliTestCase(BaseTestCase):
         ]
         content = self.get_decrypted('env.szczyp')
 
-        env['secret']['key'] = 'known'
-        env['is_important'] = False
-        env['number']['of']['bosses'] = 13
-        env['number']['of']['price'] = 24.23
+        env[0]['secret']['key'] = 'known'
+        env[0]['is_important'] = False
+        env[0]['number']['of']['bosses'] = 13
+        env[0]['number']['of']['price'] = 24.23
         assert content == env
 
     def test_replace__default_env__only_one_env_changed(self):
 
-        env0 = {
-            'secret': {
-                'key': 'secret.whatever'
-            },
-            'is_important': True,
-        }
-        env1 = {
-            'secret': {
-                'key': 'secret.whatever'
-            },
-            'is_important': True,
-        }
+        env0 = [
+            {
+                'secret': {
+                    'key': 'secret.whatever'
+                },
+                'is_important': True,
+            }
+        ]
+        env1 = [
+            {
+                'secret': {
+                    'key': 'secret.whatever'
+                },
+                'is_important': True,
+            }
+        ]
         self.set_encrypted(env0, 'env0.szczyp')
         self.set_encrypted(env1, 'env1.szczyp')
 
@@ -513,23 +521,25 @@ class CliTestCase(BaseTestCase):
         content0 = self.get_decrypted('env0.szczyp')
         content1 = self.get_decrypted('env1.szczyp')
 
-        env0['secret']['key'] = 'known'
+        env0[0]['secret']['key'] = 'known'
         assert content0 == env0
         assert content1 == env1
 
     def test_replace__env_given_by_env_var__single_replacement(self):
 
-        env = {
-            'secret': {
-                'key': 'secret.whatever'
-            },
-            'is_important': True,
-            'number': {
-                'of': {
-                    'workers': '113'
+        env = [
+            {
+                'secret': {
+                    'key': 'secret.whatever'
+                },
+                'is_important': True,
+                'number': {
+                    'of': {
+                        'workers': '113'
+                    }
                 }
             }
-        }
+        ]
         self.set_encrypted(env, 'my_env.szczyp')
         os.environ[ENVIRONMENT_FILE_ENV_NAME] = 'my_env.szczyp'
 
@@ -547,22 +557,24 @@ class CliTestCase(BaseTestCase):
         ]
         content = self.get_decrypted('my_env.szczyp')
 
-        env['secret']['key'] = 'known'
+        env[0]['secret']['key'] = 'known'
         assert content == env
 
     def test_replace__env_given_as_argument__single_replacement(self):
 
-        env = {
-            'secret': {
-                'key': 'secret.whatever'
-            },
-            'is_important': True,
-            'number': {
-                'of': {
-                    'workers': '113'
+        env = [
+            {
+                'secret': {
+                    'key': 'secret.whatever'
+                },
+                'is_important': True,
+                'number': {
+                    'of': {
+                        'workers': '113'
+                    }
                 }
             }
-        }
+        ]
         self.set_encrypted(env, 'my_env.szczyp')
 
         result = self.runner.invoke(
@@ -580,21 +592,24 @@ class CliTestCase(BaseTestCase):
         ]
         content = self.get_decrypted('my_env.szczyp')
 
-        env['secret']['key'] = 'known'
+        env[0]['secret']['key'] = 'known'
         assert content == env
 
     def test_replace__env_given_as_argument__does_not_exist(self):
-        env = {
-            'secret': {
-                'key': 'secret.whatever'
-            },
-            'is_important': True,
-            'number': {
-                'of': {
-                    'workers': '113'
+
+        env = [
+            {
+                'secret': {
+                    'key': 'secret.whatever'
+                },
+                'is_important': True,
+                'number': {
+                    'of': {
+                        'workers': '113'
+                    }
                 }
             }
-        }
+        ]
         self.set_encrypted(env, 'my_env.szczyp')
 
         result = self.runner.invoke(
@@ -634,17 +649,19 @@ class CliTestCase(BaseTestCase):
 
     def test_replace__broken_replacement__keyerror(self):
 
-        env = {
-            'secret': {
-                'key': 'secret.whatever'
-            },
-            'is_important': True,
-            'number': {
-                'of': {
-                    'workers': '113'
+        env = [
+            {
+                'secret': {
+                    'key': 'secret.whatever'
+                },
+                'is_important': True,
+                'number': {
+                    'of': {
+                        'workers': '113'
+                    }
                 }
             }
-        }
+        ]
         self.set_encrypted(env)
 
         result = self.runner.invoke(
