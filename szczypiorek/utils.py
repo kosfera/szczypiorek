@@ -7,7 +7,7 @@ from .exceptions import BrokenYamlError, MissingSubstitutionKeyError
 
 def load_yaml(yaml_content):
     try:
-        return yaml.load(fix_yaml(yaml_content), Loader=yaml.FullLoader)
+        return list(yaml.full_load_all(fix_yaml(yaml_content)))
 
     except yaml.parser.ParserError:
         raise BrokenYamlError("""
@@ -18,7 +18,7 @@ def load_yaml(yaml_content):
 
 
 def dump_yaml(yaml_content):
-    return yaml.dump(yaml_content, default_flow_style=False)
+    return yaml.dump_all(yaml_content, default_flow_style=False)
 
 
 def fix_yaml(yaml_content):

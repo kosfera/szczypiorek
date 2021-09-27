@@ -26,6 +26,8 @@ class EnvParser:
 
     _envs_gpg_cache = {}
 
+    document_idx = 0
+
     @property
     def fields(self):
         fields = {}
@@ -101,6 +103,10 @@ class EnvParser:
 
         env_from_gpg = decrypt(env_from_gpg)
         env_from_gpg = load_yaml(env_from_gpg)
+
+        if isinstance(env_from_gpg, list):
+            env_from_gpg = env_from_gpg[self.document_idx]
+
         env_from_gpg = flatten(env_from_gpg)
         env_from_gpg = substitute(env_from_gpg)
 

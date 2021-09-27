@@ -29,10 +29,12 @@ class UtilsTestCase(BaseTestCase):
     #
     def test_dump_yaml__is_valid(self):
 
-        assert dump_yaml({
-            'a': {'b': 'whatever'},
-            'c': True,
-        }).strip() == n('''
+        assert dump_yaml([
+            {
+                'a': {'b': 'whatever'},
+                'c': True,
+            }
+        ]).strip() == n('''
             a:
               b: whatever
             c: true
@@ -47,10 +49,12 @@ class UtilsTestCase(BaseTestCase):
             a:
               b: 'whatever'
             c: true
-        ''')) == {
-            'a': {'b': 'whatever'},
-            'c': True,
-        }
+        ''')) == [
+            {
+                'a': {'b': 'whatever'},
+                'c': True,
+            }
+        ]
 
     def test_load_yaml__is_not_valid(self):
 
