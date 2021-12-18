@@ -1,10 +1,11 @@
 [tool.poetry]
 authors = ["CoSphere Tech <contact@cosphere.org>"]
-classifiers = []
+classifiers = ["Topic :: Software Development :: Libraries :: Python Modules"]
 description = "Szczypiorek environment management for humans."
 keywords = ["szczypiorek", "environment", "secrets"]
 name = "szczypiorek"
 readme = "README.md"
+repository = "https://github.com/cosphere-org/szczypiorek"
 version = "1.1.0"
 
 [tool.poetry.dependencies]
@@ -16,7 +17,7 @@ python-gnupg = "^0.4.8"
 validators = "^0.18.2"
 
 [tool.poetry.dev-dependencies]
-fake-factory = "^0.7"
+fake-factory = "^0.7.4"
 flake8 = "^4.0.1"
 flake8-docstrings = "^1.6.0"
 pep8-naming = "^0.12.1"
