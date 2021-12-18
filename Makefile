@@ -10,13 +10,12 @@ help:  ## show this help.
 #
 .PHONY: venv
 venv:
-	python -m venv .venv
+	poetry shell
 
 
 .PHONY: install
 install:
-	pip install -r requirements.txt && \
-	pip install -r test-requirements.txt
+	poetry install
 
 
 .PHONY: lint
@@ -45,6 +44,4 @@ coverage:  # render html coverage report
 # DEPLOYMENT
 #
 deploy_to_pypi:
-	rm -rf dist && \
-	python setup.py bdist_wheel && \
-	twine upload dist/*.whl
+	poetry publish --build

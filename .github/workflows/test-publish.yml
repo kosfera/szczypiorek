@@ -15,17 +15,19 @@ jobs:
       - name: Set up Python 3.x
         uses: actions/setup-python@v2
         with:
-          python-version: "3.7"
+          python-version: "3.9"
           architecture: "x64"
-
-      - name: Display Python version
         run: python --version
+
+      - name: Install Poetry
+        uses: Gr1N/setup-poetry@v7
+        run: poetry --version
 
       - name: Install dependencies
         working-directory: .
-        run: make install
+        run: poetry install
 
-      - name: Launch Linter
+      - name: Launch linter
         working-directory: .
         run: make lint
 
@@ -37,6 +39,4 @@ jobs:
       - name: Build and publish
         if: github.ref == 'refs/heads/master'
         working-directory: .
-        run: |
-          python setup.py bdist_wheel
-          twine upload -u __token__ -p ${{ secrets.PYPI_SZCZYPIOREK_API_TOKEN }} dist/*.whl
+        run: poetry publish --build -p ${{ secrets.PYPI_SZCZYPIOREK_API_TOKEN }}
