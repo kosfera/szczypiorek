@@ -42,4 +42,4 @@ jobs:
       - name: Build and publish
         if: github.ref == 'refs/heads/master'
         working-directory: .
-        run: poetry publish --build -p ${{ secrets.PYPI_SZCZYPIOREK_API_TOKEN }}
+        run: poetry publish --build -u __token__ -p ${{ secrets.PYPI_SZCZYPIOREK_API_TOKEN }}
