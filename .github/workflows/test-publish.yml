@@ -28,7 +28,9 @@ jobs:
 
       - name: Install dependencies
         working-directory: .
-        run: poetry install
+        run: |
+          poetry env use 3.9.9
+          poetry install
 
       - name: Launch linter
         working-directory: .

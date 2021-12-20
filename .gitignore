@@ -1,8 +1,6 @@
+.DS_Store
 
-coverage_html
 .szczypiorek_encryption_key
-
-*.py[cod]
 
 # C extensions
 *.so
@@ -30,9 +28,13 @@ pip-log.txt
 .research
 nosetests.xml
 coverage.xml
+coverage_html
 cover
 pep8.txt
 sphinx-output
+__pycache__
+.pytest_cache
+*.py[cod]
 
 # Translations
 *.mo
@@ -42,8 +44,6 @@ sphinx-output
 .cache
 .commands
 # Settings overrides
-.pytest_cache
-
 settings_local.py
 
 # docs

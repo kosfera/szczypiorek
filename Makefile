@@ -11,13 +11,14 @@ help:  ## show this help.
 #
 # DEVELOPMENT
 #
+.PHONY: install
+install:
+	poetry env use 3.9.9
+	poetry install
+
 .PHONY: venv
 venv:
 	poetry shell
-
-.PHONY: install
-install:
-	poetry install
 
 .PHONY: lint
 lint:  ## lint the cosphere_api & tests
