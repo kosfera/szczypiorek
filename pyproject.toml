@@ -17,6 +17,7 @@ python-gnupg = "^0.4.8"
 validators = "^0.18.2"
 
 [tool.poetry.dev-dependencies]
+autopep8 = "^1.6.0"
 fake-factory = "^0.7.4"
 flake8 = "^4.0.1"
 flake8-docstrings = "^1.6.0"
@@ -26,7 +27,6 @@ pytest = "^6.2.5"
 pytest-cov = "^3.0.0"
 pytest-mock = "^3.6.1"
 pytest-pythonpath = "^0.7.3"
-autopep8 = "^1.6.0"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"

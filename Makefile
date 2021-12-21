@@ -16,10 +16,6 @@ install:
 	poetry env use 3.9.9
 	poetry install
 
-.PHONY: venv
-venv:
-	poetry shell
-
 .PHONY: lint
 lint:  ## lint the cosphere_api & tests
 	echo -n '\n[CHECKER] check if code fulfills quality criteria\n'
