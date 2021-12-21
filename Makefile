@@ -11,12 +11,9 @@ help:  ## show this help.
 #
 # DEVELOPMENT
 #
-.PHONY: venv
-venv:
-	poetry shell
-
 .PHONY: install
 install:
+	poetry env use 3.9.9
 	poetry install
 
 .PHONY: lint

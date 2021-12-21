@@ -1,8 +1,9 @@
-
-coverage_html
 .szczypiorek_encryption_key
 
-*.py[cod]
+# Development
+.DS_Store
+.vscode/
+.idea/
 
 # C extensions
 *.so
@@ -30,36 +31,37 @@ pip-log.txt
 .research
 nosetests.xml
 coverage.xml
+coverage_html
 cover
 pep8.txt
 sphinx-output
+__pycache__/
+.pytest_cache/
+*.py[cod]
 
 # Translations
 *.mo
 
 # Default dev virtual environment
-.venv*
+.venv/
 .cache
 .commands
 # Settings overrides
-.pytest_cache
-
 settings_local.py
 
 # docs
 docs/build*
 
 # FE stuff
-node_modules
+node_modules/
 bower_components
 
 # dev files
 .todos
+dump.json
 
 # docker stuff
 docker-compose.yml
 
 # django
 collectedstatic
-
-dump.json
