@@ -169,6 +169,10 @@ TODO: add it
 
 There's still a lot of work to do, even though the basic functionality of **szczypiorek** is production ready:
 
+- [ ] **[HIGH PRIO]** add integration with various keyvaults
+
+- [ ] **[HIGH PRIO]** add integration precommit hooks for checking if you're not commiting the secrets!
+
 - [ ] **[HIGH PRIO]** enable versioning of secrets and a command which is able to clean up all unused secrets
 
 - [ ] **[HIGH PRIO]** use https://github.com/squidfunk/mkdocs-material for docs
