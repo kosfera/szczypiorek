@@ -1,4 +1,5 @@
-<img src="./assets/szczypiorek_logo.png" height="300">
+<img height="150" src="./assets/logo.png"/>
+
 
 # Szczypiorek - environment management for humans
 
